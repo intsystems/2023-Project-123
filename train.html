@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Train &mdash; MyLib  documentation</title>
@@ -30,14 +30,18 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> MyLib
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            MyLib
           </a>
               <div class="version">
                 0.0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -83,8 +87,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Train</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Train</li>
       <li class="wy-breadcrumbs-aside">
               <a href="https://github.com/Intelligent-Systems-Phystech/ProjectTemplate/blob/master/doc/source/train.rst" class="fa fa-github"> Edit on GitHub</a>
       </li>
@@ -94,8 +98,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="train">
-<h1>Train<a class="headerlink" href="#train" title="Permalink to this heading"></a></h1>
+  <section id="module-mylib.train">
+<span id="train"></span><h1>Train<a class="headerlink" href="#module-mylib.train" title="Permalink to this heading"></a></h1>
 <p>The <a class="reference internal" href="#module-mylib.train" title="mylib.train"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mylib.train</span></code></a> contains classes:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="#mylib.train.Trainer" title="mylib.train.Trainer"><code class="xref py py-class docutils literal notranslate"><span class="pre">mylib.train.Trainer</span></code></a></p></li>
@@ -104,7 +108,7 @@
 <ul class="simple">
 <li><p><a class="reference internal" href="#mylib.train.cv_parameters" title="mylib.train.cv_parameters"><code class="xref py py-func docutils literal notranslate"><span class="pre">mylib.train.cv_parameters()</span></code></a></p></li>
 </ul>
-<span class="target" id="module-mylib.train"></span><dl class="py class">
+<dl class="py class">
 <dt class="sig sig-object py" id="mylib.train.SyntheticBernuliDataset">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mylib.train.</span></span><span class="sig-name descname"><span class="pre">SyntheticBernuliDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/train.html#SyntheticBernuliDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.train.SyntheticBernuliDataset" title="Permalink to this definition"></a></dt>
 <dd><p>Base class for synthetic dataset.</p>
@@ -125,7 +129,7 @@
 <span class="sig-name descname"><span class="pre">test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/mylib/train.html#Trainer.test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mylib.train.Trainer.test" title="Permalink to this definition"></a></dt>
 <dd><p>Evaluate model for given dataset.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>numpy.array</em>) – The array of shape 
 <cite>num_elements</cite> <span class="math notranslate nohighlight">\(\times\)</span> <cite>num_feature</cite>.</p></li>
@@ -152,7 +156,7 @@
 </dd>
 </dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>numpy.array</em>) – The array of shape 
 <cite>num_elements</cite> <span class="math notranslate nohighlight">\(\times\)</span> <cite>num_feature</cite>.</p></li>
