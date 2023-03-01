@@ -16,22 +16,16 @@
 
 
 
-\title{A template for the \emph{arxiv} style}
+\title{Mitigating distributional biases in contrastive learning}
 
-\author{ David S.~Hippocampus\thanks{Use footnote for providing further
-		information about author (webpage, alternative
-		address)---\emph{not} for acknowledging funding agencies.} \\
-	Department of Computer Science\\
-	Cranberry-Lemon University\\
-	Pittsburgh, PA 15213 \\
-	\texttt{hippo@cs.cranberry-lemon.edu} \\
+\author{ Lidia Troeshestova \\
+	Moscow Institute of Physics and Technology\\
+	\texttt{troeshestova.ls@phystech.edu} \\
 	%% examples of more authors
 	\And
-	Elias D.~Striatum \\
-	Department of Electrical Engineering\\
-	Mount-Sheikh University\\
-	Santa Narimana, Levand \\
-	\texttt{stariate@ee.mount-sheikh.edu} \\
+	Roman Isachenko\thanks{Use footnote for providing further information about author (webpage, alternative address)---\emph{not} for acknowledging funding agencies.} \\
+	   \\
+	\texttt{} \\
 	%% \AND
 	%% Coauthor \\
 	%% Affiliation \\
@@ -66,17 +60,26 @@ pdfkeywords={First keyword, Second keyword, More},
 \maketitle
 
 \begin{abstract}
-	\lipsum[1]
+	Recently there has been a renewed interest in using contrastive learning for self-supervised representation learning. A popular method for learning representations without labels is to compare similar (positive) and dissimilar (negative) pairs of samples. However, negative samples are often chosen randomly, which means that they could be of the same class. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. The experiments are performed on MNIST and CIFAR10 datasets. This can further improve availability of accurate models for classification in tasks where extensive labeling is expensive or inaccessible.
 \end{abstract}
 
 
-\keywords{First keyword \and Second keyword \and More}
+\keywords{: Contrastive learning \and Representation learning \and Self-supervised learning}
 
 \section{Introduction}
-\lipsum[2]
-\lipsum[3]
+Representation learning has become increasingly popular in recent years due to its ability to learn meaningful representations from large amounts of data, without the need for manual feature engineering. A widely used solution for this problem is contrastive learning, a technique that uses the principle of contrasting samples against each other to learn attributes that are common between data classes and attributes that set apart a data class from another. It encourages the representations of similar pairs $(x, x^+)$ to be close, and those of dissimilar pairs $(x, x^-)$ to be more orthogonal.
 
-\section{Headings: first level}
+Due to the unavailability of actual labels during training, negative instances $x^-$ are often randomly selected from the training data. However, this approach can result in sampling bias, where $x^-$ may actually be similar to $x$. This bias can cause a significant drop in performance. 
+
+To address this issue, \citep{khosla2021supervised} extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing to effectively leverage label information. According to the experiments, supervised contrastive loss outperforms the base cross entropy, but only by a small amount. It also outperforms the cross entropy on robustness benchmark (ImageNet-C, which applies common naturally occuring perturbations such as noise, blur and contrast changes to the ImageNet dataset) and is less sensitive to hyperparameter changes.
+
+\citep{chuang2021debiased} proposed an unbiased method, where $x$ is drawn from data with labels that are truly different from $x$.
+
+\citep{chuang2021debiased} introduced \emph{debiased contrastive loss}.
+
+
+
+\section{Problem Statement}
 \label{sec:headings}
 
 \lipsum[4] See Section \ref{sec:headings}.
