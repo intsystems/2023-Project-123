@@ -72,7 +72,7 @@ Representation learning has become increasingly popular in recent years due to i
 
 The basic metric for supervised similarity is \textit{triplet loss}, where $x$ is called \textit{anchor}, $x^+$ is a sample with the same label as anchor, and $x^-$ is a sample with the different label than anchor. An improvement of triplet loss is \textit{Multi-class N-pair Loss} invented by \citep{NIPS2016_6b180037}:
 
-\begin{equation}
+\begin{equation} \label{eq:1}
 \mathcal{L}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+) + \sum _{i=1}^{N-1} \exp(f^Tf_i^-)}
 \end{equation}
 
@@ -156,7 +156,7 @@ R = \frac{1}{\tau^+} (\mathbb{E}_{x' \sim p} \exp(f^Tf') - \tau^- \mathbb{E}_{x^
 \end{equation}
 
 With finite N:
-\begin{equation} \label{eq:5}
+\begin{equation} \label{eq:11}
 L_{\text{Debiased}}^N (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim p^-^N \\ v \sim p_x^+}} \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg],
 \end{equation}
 
@@ -177,14 +177,20 @@ L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}
 \subsection{Wrong Anchor}
 This issue could arise in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weigh the losses by the cosine similarity of the anchor image vector and the description text vector.
 
-\begin{equation}
+\begin{equation} \label{eq:15}
 L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+ + \sum_{i=1}^N \exp(f^T f_i^-)}
 \end{equation}
 
+
+\section{Experiment}
+\subsection{Baseline Reproduction}
+
+The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:15}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001. All the models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
+
+
+
+
 \noindent\rule{16cm}{0.4pt}
-
-
-
 
 
 \section{Examples of citations, figures, tables, references}
