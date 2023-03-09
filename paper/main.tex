@@ -185,9 +185,16 @@ L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) 
 \section{Experiment}
 \subsection{Baseline Reproduction}
 
-The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:15}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001. All the models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
+The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:15}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
 
+ While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
 
+\begin{figure}
+	\centering
+	\includegraphics[width=1\textwidth]{figures/acc.png}
+	\caption{Baseline reproduction results.}
+	\label{fig:fig1}
+\end{figure}
 
 
 \noindent\rule{16cm}{0.4pt}
@@ -209,12 +216,7 @@ Here is an example usage of the two main commands (\verb+citet+ and \verb+citep+
 See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
 \lipsum[11]
 
-\begin{figure}
-	\centering
-	\includegraphics[width=0.5\textwidth]{../figures/log_reg_cs_exp.eps}
-	\caption{Sample figure caption.}
-	\label{fig:fig1}
-\end{figure}
+
 
 \subsection{Tables}
 See awesome Table~\ref{tab:table}.
