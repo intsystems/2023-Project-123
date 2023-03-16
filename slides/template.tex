@@ -1,0 +1,194 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer Presentation
+% LaTeX Template
+% Version 2.0 (March 8, 2022)
+%
+% This template originates from:
+% https://www.LaTeXTemplates.com
+%
+% Author:
+% Vel (vel@latextemplates.com)
+%
+% License:
+% CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[
+	11pt, % Set the default font size, options include: 8pt, 9pt, 10pt, 11pt, 12pt, 14pt, 17pt, 20pt
+	%t, % Uncomment to vertically align all slide content to the top of the slide, rather than the default centered
+	%aspectratio=169, % Uncomment to set the aspect ratio to a 16:9 ratio which matches the aspect ratio of 1080p and 4K screens and projectors
+]{beamer}
+
+\graphicspath{{Images/}{./}} % Specifies where to look for included images (trailing slash required)
+
+\usepackage[english,russian]{babel}
+\usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule for better rules in tables
+
+\usepackage{fixltx2e}% for \textsubscript
+\usepackage[fleqn]{amsmath}
+\usepackage{bm}
+
+%----------------------------------------------------------------------------------------
+%	SELECT LAYOUT THEME
+%----------------------------------------------------------------------------------------
+
+% Beamer comes with a number of default layout themes which change the colors and layouts of slides. Below is a list of all themes available, uncomment each in turn to see what they look like.
+
+
+\usetheme{Madrid}
+
+
+%----------------------------------------------------------------------------------------
+%	SELECT COLOR THEME
+%----------------------------------------------------------------------------------------
+
+% Beamer comes with a number of color themes that can be applied to any layout theme to change its colors. Uncomment each of these in turn to see how they change the colors of your selected layout theme.
+
+%\usecolortheme{albatross}
+%\usecolortheme{beaver}
+%\usecolortheme{beetle}
+%\usecolortheme{crane}
+%\usecolortheme{dolphin}
+%\usecolortheme{dove}
+%\usecolortheme{fly}
+%\usecolortheme{lily}
+%\usecolortheme{monarca}
+%\usecolortheme{seagull}
+%\usecolortheme{seahorse}
+%\usecolortheme{spruce}
+%\usecolortheme{whale}
+%\usecolortheme{wolverine}
+
+%----------------------------------------------------------------------------------------
+%	SELECT FONT THEME & FONTS
+%----------------------------------------------------------------------------------------
+
+% Beamer comes with several font themes to easily change the fonts used in various parts of the presentation. Review the comments beside each one to decide if you would like to use it. Note that additional options can be specified for several of these font themes, consult the beamer documentation for more information.
+
+\usefonttheme{default} % Typeset using the default sans serif font
+%\usefonttheme{serif} % Typeset using the default serif font (make sure a sans font isn't being set as the default font if you use this option!)
+%\usefonttheme{structurebold} % Typeset important structure text (titles, headlines, footlines, sidebar, etc) in bold
+%\usefonttheme{structureitalicserif} % Typeset important structure text (titles, headlines, footlines, sidebar, etc) in italic serif
+%\usefonttheme{structuresmallcapsserif} % Typeset important structure text (titles, headlines, footlines, sidebar, etc) in small caps serif
+
+%------------------------------------------------
+
+%\usepackage{mathptmx} % Use the Times font for serif text
+\usepackage{palatino} % Use the Palatino font for serif text
+
+%\usepackage{helvet} % Use the Helvetica font for sans serif text
+\usepackage[default]{opensans} % Use the Open Sans font for sans serif text
+%\usepackage[default]{FiraSans} % Use the Fira Sans font for sans serif text
+%\usepackage[default]{lato} % Use the Lato font for sans serif text
+
+%----------------------------------------------------------------------------------------
+%	SELECT INNER THEME
+%----------------------------------------------------------------------------------------
+
+% Inner themes change the styling of internal slide elements, for example: bullet points, blocks, bibliography entries, title pages, theorems, etc. Uncomment each theme in turn to see what changes it makes to your presentation.
+
+%\useinnertheme{default}
+\useinnertheme{circles}
+%\useinnertheme{rectangles}
+%\useinnertheme{rounded}
+%\useinnertheme{inmargin}
+
+%----------------------------------------------------------------------------------------
+%	SELECT OUTER THEME
+%----------------------------------------------------------------------------------------
+
+% Outer themes change the overall layout of slides, such as: header and footer lines, sidebars and slide titles. Uncomment each theme in turn to see what changes it makes to your presentation.
+
+%\useoutertheme{default}
+%\useoutertheme{infolines}
+%\useoutertheme{miniframes}
+%\useoutertheme{smoothbars}
+%\useoutertheme{sidebar}
+%\useoutertheme{split}
+%\useoutertheme{shadow}
+%\useoutertheme{tree}
+%\useoutertheme{smoothtree}
+
+%\setbeamertemplate{footline} % Uncomment this line to remove the footer line in all slides
+%\setbeamertemplate{footline}[page number] % Uncomment this line to replace the footer line in all slides with a simple slide count
+
+%\setbeamertemplate{navigation symbols}{} % Uncomment this line to remove the navigation symbols from the bottom of all slides
+
+%----------------------------------------------------------------------------------------
+%	PRESENTATION INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title[]{Анализ смещения распределения в задаче контрастного распределения} % The short title in the optional parameter appears at the bottom of every slide, the full title in the main parameter is only on the title page
+
+
+\author[Лидия Троешестова \and Роман Исаченко]{Лидия Троешестова \and Роман Исаченко} % Presenter name(s), the optional parameter can contain a shortened version to appear on the bottom of every slide, while the main parameter will appear on the title slide
+
+
+\date[\today]{ \\ \today} % Presentation date or conference/meeting name, the optional parameter can contain a shortened version to appear on the bottom of every slide, while the required parameter value is output to the title slide
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	TITLE SLIDE
+%----------------------------------------------------------------------------------------
+
+% \begin{frame}
+% 	\titlepage % Output the title slide, automatically created using the text entered in the PRESENTATION INFORMATION block above
+% \end{frame}
+
+%------------------------------------------------
+
+\subsection{problem}
+\setbeamerfont{frametitle}{size=\small}
+
+
+\begin{frame}
+    \frametitle{Анализ смещения распределения в задаче контрастного распределения}
+\scriptsize 
+$p^+_x(\mathbf{x'})$ — вероятность взять $\mathbf{x'}$ как позитивный объект для $\mathbf{x}$.
+
+% = h(\mathbf{x})) p(\mathbf{x'}|h(\mathbf{x'}) = p(\mathbf{x'}|h(\mathbf{x'}) \neq h(\mathbf{x}))
+
+$p^-_x(\mathbf{x'})$ — вероятность взять $\mathbf{x'}$ как негативный объект для $\mathbf{x}$.
+
+$\tau^+$ — вероятность 1 класса; $\tau^- = 1 - \tau^+$ — вероятность любого другого класса $\implies p(\mathbf{x'}) = \tau^+ p_x^+(\mathbf{x'}) + \tau^-p_x^-(\mathbf{x'})$
+
+\textbf{Цель}: исследовать методы устранения смещения распределений $p_x^-$ и $p_x^+$ без использования меток соответствующих классов.
+
+ \textbf{Идея}: в новой функции потерь использовать оценку распределения $p_x^+$ в предопложении верности негативных объектов.
+
+\begin{figure}
+\centering
+\begin{subfigure}
+  \centering
+  \includegraphics[width=.4\linewidth]{Images/triplet.jpeg}
+  % \caption{Triplet loss visualization}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}
+  \centering
+  \includegraphics[width=.5\linewidth]{Images/t-SNE.jpeg}
+  % \caption{t-SNE visualization of learned representations on CIFAR10}
+  \label{fig:sub2}
+\end{subfigure}
+\label{fig:test}
+\end{figure}
+
+
+\begin{equation*} \small
+L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{\mathbf{x} \sim p, \mathbf{x^+} \sim p^+_x,\\ \mathbf{x^-} \sim p_x^-}} \bigg[-\log \frac{\exp (\text{sim}_f(\mathbf{x}, \mathbf{x^+}))}{\exp (\text{sim}_f(\mathbf{x}, \mathbf{x^+}) + \sum _{i=1}^N \exp (\text{sim}_f(\mathbf{x}, \mathbf{x^-})}\bigg]
+
+\end{equation*}
+\end{frame}
+
+
+%------------------------------------------------
+
+\end{document} 
