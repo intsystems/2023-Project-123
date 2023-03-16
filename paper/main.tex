@@ -2,7 +2,7 @@
 \usepackage{arxiv}
 
 \usepackage[utf8]{inputenc}
-\usepackage[english, russian]{babel}
+\usepackage[english]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{url}
 \usepackage{booktabs}
@@ -61,7 +61,7 @@ pdfkeywords={First keyword, Second keyword, More},
 \maketitle
 
 \begin{abstract}
-	Recently there has been a renewed interest in using contrastive learning for self-supervised representation learning. A popular method for learning representations without labels is to compare similar (positive) and dissimilar (negative) pairs of samples. However, negative samples are often chosen randomly, which means that they could be of the same class. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. The experiments are performed on MNIST and CIFAR10 datasets. This can further improve availability of accurate models for classification in tasks where extensive labeling is expensive or inaccessible.
+	Recently there has been a renewed interest in using contrastive learning for self-supervised representation learning. A popular method for learning representations without labels is to compare similar (positive) and dissimilar (negative) pairs of samples. However, negative samples are often chosen randomly, which means that they could be of the same class. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. The experiments are performed on MNIST and CIFAR10 datasets. This will further improve availability of accurate models for classification in tasks where extensive labeling is expensive or inaccessible.
 \end{abstract}
 
 
@@ -70,15 +70,15 @@ pdfkeywords={First keyword, Second keyword, More},
 \section{Introduction}
 Representation learning has become increasingly popular in recent years due to its ability to learn meaningful representations from large amounts of data, without the need for manual feature engineering. A widely used solution for this problem is contrastive learning, a technique that uses the principle of contrasting samples against each other to learn attributes that are common between data classes and attributes that set apart a data class from another. It encourages the representations of similar pairs $(x, x^+)$ to be close, and those of dissimilar pairs $(x, x^-)$ to be more orthogonal.
 
-The basic metric for supervised similarity is \textit{triplet loss}, where $x$ is called \textit{anchor}, $x^+$ is a sample with the same label as anchor, and $x^-$ is a sample with the different label than anchor. An improvement of triplet loss is \textit{Multi-class N-pair Loss} invented by \citep{NIPS2016_6b180037}:
+The basic metric for supervised similarity is \textit{triplet loss} \citep{schroff2015facenet}, where \textbf{x} is called \textit{anchor}, \textbf{x}$^+$ is a sample with the same label as anchor, and \textbf{x}$^-$ is a sample with the different label than anchor. An improvement of triplet loss is \textit{Multi-class N-pair Loss} invented by \citep{NIPS2016_6b180037}:
 
 \begin{equation} \label{eq:1}
-\mathcal{L}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+) + \sum _{i=1}^{N-1} \exp(f^Tf_i^-)}
+\mathcal{L}(\textbf{x}, \textbf{x}^+, \{\textbf{x}_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+) + \sum _{i=1}^{N-1} \exp(f^Tf_i^-)}
 \end{equation}
 
 Contrastive learning has proven to be effective for eliciting visual representations: SimCLR  \citep{Chen2020SimCLR} is a framework that considerably outperforms previous self-supervised and semi-supervised learning methods. Its authors developed NT-Xent loss (normalized temperature-scaled cross entropy loss), that uses cosine similarity instead of scalar products.
 
-Due to the unavailability of actual labels during training, negative instances $x^-$ are often randomly selected from the training data. However, this approach can result in sampling bias, where $x^-$ may actually be similar to $x$. This bias can cause a significant drop in performance. 
+Due to the unavailability of actual labels during training, negative instances $x^-$ are often randomly selected from the training data. However, this approach results in sampling bias, where $x^-$ may actually be similar to $x$. This bias causes a significant drop in performance. 
 
 To address this issue, \citep{khosla2021supervised} extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing to effectively leverage label information. According to the experiments, supervised contrastive loss outperforms the base cross entropy, but only by a small amount. It also outperforms the cross entropy on robustness benchmark (ImageNet-C, which applies common naturally occuring perturbations such as noise, blur and contrast changes to the ImageNet dataset) and is less sensitive to hyperparameter changes.
 
@@ -93,7 +93,7 @@ This work aims to develop a new algorithm for debiased sampling in contrastive l
 
 \subsection{Debiased Contrastive Learning}
 
-In \citep{chuang2021debiased} the distribution over classes is denoted by $\rho(c)$, the joint distribution $p_{x,c}(x, c) = p(x|c)\rho(c)$. Let $h : X \rightarrow C$ be the function assigning the latent class labels. Then $p^+_x(x') = p(x'|h(x') = h(x))$ is the probability of observing $x'$ as a positive example for x and $p^-_x(x') = p(x'|h(x') \neq h(x))$ the probability of a negative example. It is assumed that the class probabilities $\rho(x) = \tau^+$ are uniform, and $\tau^- = 1 - \tau^+$ is the probability of observing any different class. Then the 'ideal', or unbiased loss to optimize would be:
+In \citep{chuang2021debiased} the distribution over classes is denoted by $\rho(c)$, the joint distribution $p_{x,c}(x, c) = p(x|c)\rho(c)$. Let $h : X \rightarrow C$ be the function assigning the latent class labels. Then $p^+_x(x') = p(x'|h(x') = h(x))$ is the probability of observing $x'$ as a positive example for x and $p^-_x(x') = p(x'|h(x') \neq h(x))$ the probability of a negative example. It is assumed that the class probabilities $\rho(x) = \tau^+$ are uniform, and $\tau^- = 1 - \tau^+$ is the probability of observing any different class. Then the  ``ideal``, or unbiased loss to optimize would be:
 
 \begin{equation}
 L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x^-}} \bigg[-\log \frac{e^{f(x)^T f(x^+)}}{e^{f(x)^T f(x^+)} + \sum _{i=1}^N e^{f(x)^T f(x_i^-)}}\bigg]
@@ -115,13 +115,13 @@ The data distribution can be decomposed:
 p(x') = \tau^+ p^+_x(x') + \tau^-p_x^-(x')
 \end{equation}
 
-And the missing $p^-_x(x')$ can be derived as
+And the missing $p^-_x(x')$ is derived as
 \begin{equation} \label{eq:5}
 p_x^-(x') = \frac{p(x') - \tau^+ p^+_x(x')}{\tau^-}
 \end{equation}
 However, estimating $p(x')$ and $p^+_x(x')$ empirically is computationally expensive, and the authors propose a cheaper way to estimate $p^-_x(x')$, using $N$ samples $\{u_i\}_{i=1}^N$ from $p$ and $M$ samples $\{v_i\}_{i=1}^M$ from $p_x^+$:
 
-\begin{equation}
+\begin{equation} \label{eq:6}
 L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p; x_+ \sim p_x^+,\\ \{u_i\}_{i=1}^N \sim p^N \\ \{v_i\}_{i=1}^N \sim p_x^+^M}}  \bigg[ -\log \frac{e^{f(x)^T} f(x^+)}{e^{f(x)^T f(x^+)} + N g\big(x, \{u_i\}_{i=1}^N, \{v_i\}_{i=1}^M\big)} \bigg],
 \end{equation}
 
@@ -140,7 +140,7 @@ Using this loss on SimCLR framework allowed to achieve higher accuracy compared 
 \end{itemize}
 
 
-\subsection{False Positive Images}
+\subsection{False Positive Samples}
 False Positive samples can be encountered in contrastive learning due to excessive or inappropriate augmentation. Similar to Debiased Contrastive Learning, we propose to estimate the positive sampling distribution in the loss function.
 \begin{equation}
 p_x^+ (x') = \frac{p(x') - \tau^- p^-_x(x')}{\tau^+}
@@ -170,12 +170,12 @@ R' = \exp(f(x)^T f(v)) + R^-
 \end{equation}
 
 When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised} we will aggregate using the summation over positives located outside of the log (which yields better accuracy for supervised contrastive losses rather than summation inside of the log):
-\begin{equation}
+\begin{equation} \label{eq:14}
 L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim p^-^N \\ \{v_i\}_{i=1}^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg]
 \end{equation}
 
 \subsection{Wrong Anchor}
-This issue could arise in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weigh the losses by the cosine similarity of the anchor image vector and the description text vector.
+This issue arises in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weigh the losses by the cosine similarity of the anchor image vector and the description text vector.
 
 \begin{equation} \label{eq:15}
 L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+ + \sum_{i=1}^N \exp(f^T f_i^-)}
@@ -185,17 +185,41 @@ L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) 
 \section{Experiment}
 \subsection{Baseline Reproduction}
 
-The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:15}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
+The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:6}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
 
- While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
+ The results are shown in Figure \ref{fig:fig1}. While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
 
-\begin{figure}
-	\centering
-	\includegraphics[width=1\textwidth]{figures/acc.png}
-	\caption{Baseline reproduction results.}
-	\label{fig:fig1}
+\begin{figure}[!htb]
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{figures/baseline_acc1.png}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{figures/baseline_acc5.png}
+\endminipage
+\caption{Classification accuracy on CIFAR10, Biased contrastive loss and Debiased-Neg.}
+\label{fig:fig1}
 \end{figure}
 
+\subsection{Testing New Loss}
+We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{fig:fig2} shows a tangible difference between the performances of the novel loss and the previous losses. The accuracy advantage is prevalent from the very first steps of training both for Top-1 and Top-5 accuracy, meaning Positive-Debiased loss is more efficient in the early stages of training.  
+
+
+% \begin{figure}
+% \includegraphics[width=0.5\textwidth]{figures/3_losses.png}
+% 	\caption{Loss functions}
+% 	\label{fig:fig1}
+% \end{figure}
+
+\begin{figure}[!htb]
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{figures/3_losses.png}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{figures/3_losses_5.png}
+\endminipage
+\caption{Classification accuracy on CIFAR10, Debiased-Pos.}
+\label{fig:fig2}
+\end{figure}
 
 \noindent\rule{16cm}{0.4pt}
 
