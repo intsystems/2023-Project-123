@@ -99,6 +99,10 @@ In \citep{chuang2021debiased} the distribution over classes is denoted by $\rho(
 L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x^-}} \bigg[-\log \frac{e^{f(x)^T f(x^+)}}{e^{f(x)^T f(x^+)} + \sum _{i=1}^N e^{f(x)^T f(x_i^-)}}\bigg]
 \end{equation}
 
+\begin{equation}
+L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x^-}} \bigg[-\log \frac{\exp (\text{sim}(x, x^+))}{\exp (\text{sim}(x, x^+) + \sum _{i=1}^N \exp (\text{sim}(x, x^-)}\bigg]
+\end{equation}
+
 In practice, $p_x^-(x_i^-)$ is unavailable.
 Thus, the standard solution is to sample negative examples $x_i^-$ from the unlabeled $p(x)$ instead. When drawn from $p(x)$, the sample $x_i^-$ will be of the same class as x with probability $\tau^+$.
 
@@ -122,12 +126,12 @@ p_x^-(x') = \frac{p(x') - \tau^+ p^+_x(x')}{\tau^-}
 However, estimating $p(x')$ and $p^+_x(x')$ empirically is computationally expensive, and the authors propose a cheaper way to estimate $p^-_x(x')$, using $N$ samples $\{u_i\}_{i=1}^N$ from $p$ and $M$ samples $\{v_i\}_{i=1}^M$ from $p_x^+$:
 
 \begin{equation} \label{eq:6}
-L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p; x_+ \sim p_x^+,\\ \{u_i\}_{i=1}^N \sim p^N \\ \{v_i\}_{i=1}^N \sim p_x^+^M}}  \bigg[ -\log \frac{e^{f(x)^T} f(x^+)}{e^{f(x)^T f(x^+)} + N g\big(x, \{u_i\}_{i=1}^N, \{v_i\}_{i=1}^M\big)} \bigg],
+L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p; x_+ \sim p_x^+,\\ \{u_i\}_{i=1}^N \sim p^N \\ \{v_i\}_{i=1}^N \sim {p_x^+}^M}}  \bigg[ -\log \frac{e^{f(x)^T} f(x^+)}{e^{f(x)^T f(x^+)} + N g\big(x, \{u_i\}_{i=1}^N, \{v_i\}_{i=1}^M\big)} \bigg],
 \end{equation}
 
 where
 \begin{equation}
-g\big(x, \{u_i\}_{i=1}^N, \{v_i\}_{i=1}^M\big) = \max \bigg\{ \frac{1}{\tau^-}\bigg(\frac{1}{N} \sum \limits_{i=1}^N e^{f(x)^T f(u_i) - \tau^+ \frac{1}{M} \sum \limits_{i=1}^M e^{f(x)^T f(v_i)}}\bigg), e^{-1/t}\bigg\}
+g\big(x, \{u_i\}_{i=1}^N, \{v_i\}_{i=1}^M\big) = \max \bigg\{ \frac{1}{\tau^-}\bigg(\frac{1}{N} \sum \limits_{i=1}^N e^{f(x)^T f(u_i)} - \tau^+ \frac{1}{M} \sum \limits_{i=1}^M e^{f(x)^T f(v_i)}\bigg), e^{-1/t}\bigg\}
 \end{equation}
 
 Using this loss on SimCLR framework allowed to achieve higher accuracy compared to the regular biased loss. With a similar theoretical inference, this work is aimed at developing a new algorithm, that would additionally focus on eliminating bias caused by False Positives.
@@ -140,14 +144,14 @@ Using this loss on SimCLR framework allowed to achieve higher accuracy compared 
 \end{itemize}
 
 
-\subsection{False Positive Samples}
+\subsection{False Positive Samples} \label{FP}
 False Positive samples can be encountered in contrastive learning due to excessive or inappropriate augmentation. Similar to Debiased Contrastive Learning, we propose to estimate the positive sampling distribution in the loss function.
 \begin{equation}
 p_x^+ (x') = \frac{p(x') - \tau^- p^-_x(x')}{\tau^+}
 \end{equation}
 Contrary to Debiased Contrastive Learning, drawing samples from $p(x')$ will also include positive labelled datapoints, since some of them could be actually negative. With $N \to \infty$:
 \begin{equation}
-\mathbb{E}_{\substack{x \sim p \\ x^+ \sim p_x^+ \\ \{x_i^-\}_{i=1}^N \sim p^-^N_x}} \bigg[ - \log \frac{\exp(f^T f^+)}{\exp(f^T f^+) + \sum_{i=1}^N \exp(f^T f_i^-)} \bigg] \longrightarrow \mathbb{E}_{\substack{x \sim p \\ x^- \sim p_x^-}} \bigg[ - \log \frac{R}{R + N \mathbb{E}_{x^- \sim p_x^-} \exp(f^t f^-)} \bigg],
+\mathbb{E}_{\substack{x \sim p \\ x^+ \sim p_x^+ \\ \{x_i^-\}_{i=1}^N \sim {p_x^-}^N}} \bigg[ - \log \frac{\exp(f^T f^+)}{\exp(f^T f^+) + \sum_{i=1}^N \exp(f^T f_i^-)} \bigg] \longrightarrow \mathbb{E}_{\substack{x \sim p \\ x^- \sim p_x^-}} \bigg[ - \log \frac{R}{R + N \mathbb{E}_{x^- \sim p_x^-} \exp(f^T f^-)} \bigg],
 \end{equation}
 
 where
@@ -157,7 +161,7 @@ R = \frac{1}{\tau^+} (\mathbb{E}_{x' \sim p} \exp(f^Tf') - \tau^- \mathbb{E}_{x^
 
 With finite N:
 \begin{equation} \label{eq:11}
-L_{\text{Debiased}}^N (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim p^-^N \\ v \sim p_x^+}} \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg],
+L_{\text{Debiased}}^N (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim {p^-}^N \\ v \sim p_x^+}} \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg],
 \end{equation}
 
 where
@@ -171,7 +175,7 @@ R' = \exp(f(x)^T f(v)) + R^-
 
 When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised} we will aggregate using the summation over positives located outside of the log (which yields better accuracy for supervised contrastive losses rather than summation inside of the log):
 \begin{equation} \label{eq:14}
-L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim p^-^N \\ \{v_i\}_{i=1}^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg]
+L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim p^-^N \\ \{v_i\}_{i=1}^M\sim p^+^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg]
 \end{equation}
 
 \subsection{Wrong Anchor}
@@ -185,7 +189,7 @@ L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) 
 \section{Experiment}
 \subsection{Baseline Reproduction}
 
-The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:6}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
+The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:6}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001 and batch size 512. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
 
  The results are shown in Figure \ref{fig:fig1}. While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
 
@@ -196,19 +200,12 @@ The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with
 \minipage{0.49\textwidth}
 \includegraphics[width=\linewidth]{figures/baseline_acc5.png}
 \endminipage
-\caption{Classification accuracy on CIFAR10, Biased contrastive loss and Debiased-Neg.}
+\caption{Classification accuracy on CIFAR10. Negative-Debiased loss is denoted as debiasedNeg.}
 \label{fig:fig1}
 \end{figure}
 
 \subsection{Testing New Loss}
-We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{fig:fig2} shows a tangible difference between the performances of the novel loss and the previous losses. The accuracy advantage is prevalent from the very first steps of training both for Top-1 and Top-5 accuracy, meaning Positive-Debiased loss is more efficient in the early stages of training.  
-
-
-% \begin{figure}
-% \includegraphics[width=0.5\textwidth]{figures/3_losses.png}
-% 	\caption{Loss functions}
-% 	\label{fig:fig1}
-% \end{figure}
+We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{fig:fig2} shows a tangible difference between the performances of the novel loss and the previous losses. The accuracy advantage is prevalent from the very first steps of training both for Top-1 and Top-5 accuracy, meaning Positive-Debiased loss is more efficient in the early stages of training.
 
 \begin{figure}[!htb]
 \minipage{0.49\textwidth}
@@ -217,66 +214,89 @@ We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{f
 \minipage{0.49\textwidth}
 \includegraphics[width=\linewidth]{figures/3_losses_5.png}
 \endminipage
-\caption{Classification accuracy on CIFAR10, Debiased-Pos.}
+\caption{Classification accuracy on CIFAR10, Positive-Debiased loss is denoted as debiasedPos.}
 \label{fig:fig2}
+\end{figure}
+
+To test the performance of the loss under the assumptions made in \ref{FP}, we artificially exclude False Negative errors via accessing ground truth labels during training, and discover that Positive-Debiased loss still outperforms Negative-Debiased loss [Figure \ref{fig:fig3}].
+
+\begin{figure}
+\includegraphics[width=1\textwidth]{figures/base_vs_dropfn.png}
+\caption{Classification accuracy on CIFAR10 with dropping False Negatives}
+\label{fig:fig3}
+\end{figure}
+
+To understand if Positive-Debiased loss is robust to noise, we apply Gaussian blur on train images with probability 0.3, and thus increase the False Positive rate. Figure \ref{fig:fig4} demonstrates that Positive-Debiased loss is able to mitigate False Positive errors significantly better than Negative-Debiased and Contrastive losses.
+
+\begin{figure}
+\includegraphics[width=1\textwidth]{figures/base_vs_noise.png}
+\caption{Classification accuracy on CIFAR10 with increased False Positive rate}
+\label{fig:fig4}
+\end{figure}
+
+Additionally we test all three losses with increased positive sample size M [Figure \ref{fig:fig5}]. Larger M leads to better estimate of the loss both for Positive- and Negative-Debiased losses, yielding better accuracy as a result. It is worth noting that in all of the experiments Positive-Debiased loss achieves better accuracy in the earlier stages of training both for Top-1 and Top-5 scores.
+\begin{figure}
+\includegraphics[width=1\textwidth]{figures/base_vs_M=2.png}
+\caption{Classification accuracy on CIFAR10 with increased positive sample size M}
+\label{fig:fig5}
 \end{figure}
 
 \noindent\rule{16cm}{0.4pt}
 
 
-\section{Examples of citations, figures, tables, references}
-\label{sec:others}
+% \section{Examples of citations, figures, tables, references}
+% \label{sec:others}
 
-\subsection{Citations}
-Citations use \verb+natbib+. The documentation may be found at
-\begin{center}
-	\url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
+% \subsection{Citations}
+% Citations use \verb+natbib+. The documentation may be found at
+% \begin{center}
+% 	\url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
+% \end{center}
 
-Here is an example usage of the two main commands (\verb+citet+ and \verb+citep+): Some people thought a thing \citep{kour2014real, hadash2018estimate} but other people thought something else \citep{kour2014fast}. Many people have speculated that if we knew exactly why \citet{kour2014fast} thought this\dots
+% Here is an example usage of the two main commands (\verb+citet+ and \verb+citep+): Some people thought a thing \citep{kour2014real, hadash2018estimate} but other people thought something else \citep{kour2014fast}. Many people have speculated that if we knew exactly why \citet{kour2014fast} thought this\dots
 
-\subsection{Figures}
-\lipsum[10]
-See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
-\lipsum[11]
-
-
-
-\subsection{Tables}
-See awesome Table~\ref{tab:table}.
-See Section \ref{sec:headings}.
-
-The documentation for \verb+booktabs+ (`Publication quality tables in LaTeX') is available from:
-\begin{center}
-	\url{https://www.ctan.org/pkg/booktabs}
-\end{center}
+% \subsection{Figures}
+% \lipsum[10]
+% See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
+% \lipsum[11]
 
 
 
+% \subsection{Tables}
+% See awesome Table~\ref{tab:table}.
+% See Section \ref{sec:headings}.
 
-\subsection{Lists}
-\begin{itemize}
-	\item Lorem ipsum dolor sit amet
-	\item consectetur adipiscing elit.
-	\item Aliquam dignissim blandit est, in dictum tortor gravida eget. In ac rutrum magna.
-\end{itemize}
+% The documentation for \verb+booktabs+ (`Publication quality tables in LaTeX') is available from:
+% \begin{center}
+% 	\url{https://www.ctan.org/pkg/booktabs}
+% \end{center}
 
-\begin{table}
-	\caption{Sample table title}
-	\centering
-	\begin{tabular}{lll}
-		\toprule
-		\multicolumn{2}{c}{Part}                   \\
-		\cmidrule(r){1-2}
-		Name     & Description     & Size ($\mu$m) \\
-		\midrule
-		Dendrite & Input terminal  & $\sim$100     \\
-		Axon     & Output terminal & $\sim$10      \\
-		Soma     & Cell body       & up to $10^6$  \\
-		\bottomrule
-	\end{tabular}
-	\label{tab:table}
-\end{table}
+
+
+
+% \subsection{Lists}
+% \begin{itemize}
+% 	\item Lorem ipsum dolor sit amet
+% 	\item consectetur adipiscing elit.
+% 	\item Aliquam dignissim blandit est, in dictum tortor gravida eget. In ac rutrum magna.
+% \end{itemize}
+
+% \begin{table}
+% 	\caption{Sample table title}
+% 	\centering
+% 	\begin{tabular}{lll}
+% 		\toprule
+% 		\multicolumn{2}{c}{Part}                   \\
+% 		\cmidrule(r){1-2}
+% 		Name     & Description     & Size ($\mu$m) \\
+% 		\midrule
+% 		Dendrite & Input terminal  & $\sim$100     \\
+% 		Axon     & Output terminal & $\sim$10      \\
+% 		Soma     & Cell body       & up to $10^6$  \\
+% 		\bottomrule
+% 	\end{tabular}
+% 	\label{tab:table}
+% \end{table}
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}
