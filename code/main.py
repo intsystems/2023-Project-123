@@ -291,6 +291,7 @@ if __name__ == '__main__':
         top_k=args.top_k,
         epochs=args.epochs,
         num_pos=args.num_pos,
+        drop_fn=args.drop_fn,
         noise_frac=args.noise_frac,
         m_agg_mode=args.m_agg_mode,
         lr=args.lr,
