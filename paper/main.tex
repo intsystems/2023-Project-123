@@ -14,7 +14,16 @@
 \usepackage{natbib}
 \usepackage{doi}
 \usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{enumitem,kantlipsum}
+\usepackage{mathtools}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+\usepackage{hyperref}
+\usepackage{cleveref}
 
+\declaretheorem[name=Theorem, numberwithin=section]{thm}
 
 
 \title{Mitigating distributional biases in contrastive learning}
@@ -24,7 +33,7 @@
 	\texttt{troeshestova.ls@phystech.edu} \\
 	%% examples of more authors
 	\And
-	Roman Isachenko\thanks{Use footnote for providing further information about author (webpage, alternative address)---\emph{not} for acknowledging funding agencies.} \\
+	Roman Isachenko\\
 	   \\
 	\texttt{} \\
 	%% \AND
@@ -47,9 +56,6 @@
 
 \renewcommand{\shorttitle}{\textit{arXiv} Template}
 
-%%% Add PDF metadata to help others organize their library
-%%% Once the PDF is generated, you can check the metadata with
-%%% $ pdfinfo template.pdf
 \hypersetup{
 pdftitle={A template for the arxiv style},
 pdfsubject={q-bio.NC, q-bio.QM},
@@ -58,6 +64,7 @@ pdfkeywords={First keyword, Second keyword, More},
 }
 
 \begin{document}
+\nocite{*}
 \maketitle
 
 \begin{abstract}
@@ -68,24 +75,25 @@ pdfkeywords={First keyword, Second keyword, More},
 \keywords{: Contrastive learning \and Representation learning \and Self-supervised learning}
 
 \section{Introduction}
-Representation learning has become increasingly popular in recent years due to its ability to learn meaningful representations from large amounts of data, without the need for manual feature engineering. A widely used solution for this problem is contrastive learning, a technique that uses the principle of contrasting samples against each other to learn attributes that are common between data classes and attributes that set apart a data class from another. It encourages the representations of similar pairs $(x, x^+)$ to be close, and those of dissimilar pairs $(x, x^-)$ to be more orthogonal.
+Representation learning has become increasingly popular in recent years due to its ability to learn meaningful representations from large amounts of data, without the need for manual feature engineering. A widely used solution for this problem is contrastive learning, a technique that uses the principle of contrasting samples against each other to learn attributes that are common between data classes and attributes that set apart a data class from another. It encourages the representations of similar pairs $(\textbf{x}, \textbf{x}^+)$ to be close, and those of dissimilar pairs $(\textbf{x}, \textbf{x}^-)$ to be more orthogonal.
 
 The basic metric for supervised similarity is \textit{triplet loss} \citep{schroff2015facenet}, where \textbf{x} is called \textit{anchor}, \textbf{x}$^+$ is a sample with the same label as anchor, and \textbf{x}$^-$ is a sample with the different label than anchor. An improvement of triplet loss is \textit{Multi-class N-pair Loss} invented by \citep{NIPS2016_6b180037}:
 
 \begin{equation} \label{eq:1}
-\mathcal{L}(\textbf{x}, \textbf{x}^+, \{\textbf{x}_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+) + \sum _{i=1}^{N-1} \exp(f^Tf_i^-)}
+\mathcal{L}(\textbf{x}, \textbf{x}^+, \{\textbf{x}_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f(\textbf{x})^T f(\textbf{x}_i^+))}{\exp(f(\textbf{x})^T f(\textbf{x}_i^+)) + \sum _{i=1}^{N-1} \exp(f(\textbf{x})^Tf(\textbf{x}_i^-))}
 \end{equation}
 
 Contrastive learning has proven to be effective for eliciting visual representations: SimCLR  \citep{Chen2020SimCLR} is a framework that considerably outperforms previous self-supervised and semi-supervised learning methods. Its authors developed NT-Xent loss (normalized temperature-scaled cross entropy loss), that uses cosine similarity instead of scalar products.
 
-Due to the unavailability of actual labels during training, negative instances $x^-$ are often randomly selected from the training data. However, this approach results in sampling bias, where $x^-$ may actually be similar to $x$. This bias causes a significant drop in performance. 
+Due to the unavailability of actual labels during training, negative instances $\textbf{x}^-$ are often randomly selected from the training data. However, this approach results in sampling bias, where $\textbf{x}^-$ may actually be similar to $\textbf{x}$. This bias causes a significant drop in performance. 
 
 To address this issue, \citep{khosla2021supervised} extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing to effectively leverage label information. According to the experiments, supervised contrastive loss outperforms the base cross entropy, but only by a small amount. It also outperforms the cross entropy on robustness benchmark (ImageNet-C, which applies common naturally occuring perturbations such as noise, blur and contrast changes to the ImageNet dataset) and is less sensitive to hyperparameter changes.
 
 As for the case of self-supervised learning, a debiased contrastive loss was proposed to mitigate the bias of negative sampling by \citep{chuang2021debiased}. Given $N$ negative and $M$ positive samples, $\mathcal{L}^{N, M}_{\text{Debiased}} (f)$ is the loss function that corrects for False Negative samples. To remain unsupervised in practice, samples are acquired from the data distribution and a positive distribution mimicked by data augmentations, which can contatin False Positives.
 
-This work aims to develop a new algorithm for debiased sampling in contrastive learning, which accounts for False Positive as well as False Negative samples. In addition, it is suggested to tackle the issue of choosing a wrong anchor in multimodal applications such as attribute detection.
+This work aims to develop a new algorithm for debiased sampling in contrastive learning, which accounts for False Positive as well as False Negative samples. 
 
+% In addition, it is suggested to tackle the issue of choosing a wrong anchor in multimodal applications such as attribute detection.
 
 
 \section{Problem Statement}
@@ -93,98 +101,136 @@ This work aims to develop a new algorithm for debiased sampling in contrastive l
 
 \subsection{Debiased Contrastive Learning}
 
-In \citep{chuang2021debiased} the distribution over classes is denoted by $\rho(c)$, the joint distribution $p_{x,c}(x, c) = p(x|c)\rho(c)$. Let $h : X \rightarrow C$ be the function assigning the latent class labels. Then $p^+_x(x') = p(x'|h(x') = h(x))$ is the probability of observing $x'$ as a positive example for x and $p^-_x(x') = p(x'|h(x') \neq h(x))$ the probability of a negative example. It is assumed that the class probabilities $\rho(x) = \tau^+$ are uniform, and $\tau^- = 1 - \tau^+$ is the probability of observing any different class. Then the  ``ideal``, or unbiased loss to optimize would be:
+In \citep{chuang2021debiased} the distribution over classes is denoted by $\rho(c)$, the joint distribution $p_{x,c}(\textbf{x}, c) = p(\textbf{x}|c)\rho(c)$. Let $h : X \rightarrow C$ be the function assigning the latent class labels. Then $p^+_x(\textbf{x}') = p(\textbf{x}'|h(\textbf{x}') = h(\textbf{x}))$ is the probability of observing $\textbf{x}'$ as a positive example for $\textbf{x}$ and $p^-_x(\textbf{x}') = p(\textbf{x}'|h(\textbf{x}') \neq h(\textbf{x}))$ the probability of a negative example. It is assumed that the class probabilities $\rho(\textbf{x}) = \tau^+$ are uniform, and $\tau^- = 1 - \tau^+$ is the probability of observing any different class. Then the  ``ideal``, or unbiased loss to optimize would be:
 
-\begin{equation}
-L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x^-}} \bigg[-\log \frac{e^{f(x)^T f(x^+)}}{e^{f(x)^T f(x^+)} + \sum _{i=1}^N e^{f(x)^T f(x_i^-)}}\bigg]
+\begin{equation}  \label{eq:2}
+L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{\textbf{x} \sim p, \textbf{x}^+ \sim p^+_x,\\ \textbf{x}_i^- \sim p_x^-}} \bigg[-\log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)}}{e^{f(\textbf{x})^T f(\textbf{x}^+)} + \sum _{i=1}^N e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}\bigg]
 \end{equation}
 
-\begin{equation}
-L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x^-}} \bigg[-\log \frac{\exp (\text{sim}(x, x^+))}{\exp (\text{sim}(x, x^+) + \sum _{i=1}^N \exp (\text{sim}(x, x^-)}\bigg]
-\end{equation}
+% \begin{equation} 
+% L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x^-}} \bigg[-\log \frac{\exp (\text{sim}(x, x^+))}{\exp (\text{sim}(x, x^+) + \sum _{i=1}^N \exp (\text{sim}(x, x^-)}\bigg]
+% \end{equation}
 
-In practice, $p_x^-(x_i^-)$ is unavailable.
-Thus, the standard solution is to sample negative examples $x_i^-$ from the unlabeled $p(x)$ instead. When drawn from $p(x)$, the sample $x_i^-$ will be of the same class as x with probability $\tau^+$.
+In practice, $p_x^-(\textbf{x}_i^-)$ is unavailable. Thus, the standard solution is to sample negative examples $\textbf{x}_i^-$ from the unlabeled $p(\textbf{x})$ instead. When drawn from $p(\textbf{x})$, the sample $\textbf{x}_i^-$ will be of the same class as $\textbf{x}$ with probability $\tau^+$.
 
-\begin{equation}
-L_{\text{Biased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x}} \bigg[-\log \frac{e^{f(x)^T f(x^+)}}{e^{f(x)^T f(x^+)} + \sum _{i=1}^N e^{f(x)^T f(x_i^-)}}\bigg]
+\begin{equation} \label{eq:3}
+L_{\text{Biased}}^N(f) = \mathbb{E}_{\substack{\textbf{x} \sim p, \textbf{x}^+ \sim p^+_x,\\ \textbf{x}_i^- \sim p_x}} \bigg[-\log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)}}{e^{f(\textbf{x})^T f(\textbf{x}^+)} + \sum _{i=1}^N e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}\bigg]
 \end{equation}
 
 \paragraph{\underline{Problem statement:}} Derive a loss function that approximates the ideal $L_{\text{Unbiased}}^N$, only having access to $M$ positive samples and samples from the distribution $p$.
 
-
-
 The data distribution can be decomposed:
-\begin{equation}
-p(x') = \tau^+ p^+_x(x') + \tau^-p_x^-(x')
+\begin{equation} \label{eq:4}
+p(\textbf{x}') = \tau^+ p^+_x(\textbf{x}') + \tau^-p_x^-(\textbf{x}')
 \end{equation}
 
-And the missing $p^-_x(x')$ is derived as
+And the missing $p^-_x(\textbf{x}')$ is derived as
 \begin{equation} \label{eq:5}
-p_x^-(x') = \frac{p(x') - \tau^+ p^+_x(x')}{\tau^-}
+p_x^-(\textbf{x}') = \frac{p(\textbf{x}') - \tau^+ p^+_x(\textbf{x}')}{\tau^-}
 \end{equation}
-However, estimating $p(x')$ and $p^+_x(x')$ empirically is computationally expensive, and the authors propose a cheaper way to estimate $p^-_x(x')$, using $N$ samples $\{u_i\}_{i=1}^N$ from $p$ and $M$ samples $\{v_i\}_{i=1}^M$ from $p_x^+$:
+However, estimating $p(\textbf{x}')$ and $p^+_x(\textbf{x}')$ empirically is computationally expensive, and the authors propose a cheaper way to estimate $p^-_x(\textbf{x}')$, using $N$ samples $\{\textbf{u}_i\}_{i=1}^N$ from $p$ and $M$ samples $\{\textbf{v}_i\}_{i=1}^M$ from $p_x^+$, with temperature $t$:
 
 \begin{equation} \label{eq:6}
-L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p; x_+ \sim p_x^+,\\ \{u_i\}_{i=1}^N \sim p^N \\ \{v_i\}_{i=1}^N \sim {p_x^+}^M}}  \bigg[ -\log \frac{e^{f(x)^T} f(x^+)}{e^{f(x)^T f(x^+)} + N g\big(x, \{u_i\}_{i=1}^N, \{v_i\}_{i=1}^M\big)} \bigg],
+L_{\text{DebiasedNeg}}^{N, M} (f) = \mathbb{E}_{\substack{\textbf{x} \sim p; \textbf{x}_+ \sim p_x^+,\\ \{\textbf{u}_i\}_{i=1}^N \sim p^N \\ \{\textbf{v}_i\}_{i=1}^N \sim {p_x^+}^M}}  \bigg[ -\log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)} }{e^{f(\textbf{x})^T f(\textbf{x}^+)} + N g\big(\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \{\textbf{v}_i\}_{i=1}^M\big)} \bigg],
 \end{equation}
 
-where
-\begin{equation}
-g\big(x, \{u_i\}_{i=1}^N, \{v_i\}_{i=1}^M\big) = \max \bigg\{ \frac{1}{\tau^-}\bigg(\frac{1}{N} \sum \limits_{i=1}^N e^{f(x)^T f(u_i)} - \tau^+ \frac{1}{M} \sum \limits_{i=1}^M e^{f(x)^T f(v_i)}\bigg), e^{-1/t}\bigg\}
+where the empirical estimates of $p$ and $p_x^-$ are defined as
+\begin{equation} \label{eq:7}
+g\big(\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \{\textbf{v}_i\}_{i=1}^M\big) = \max \bigg\{ \frac{1}{\tau^-}\bigg(\frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} - \tau^+ \frac{1}{M} \sum \limits_{i=1}^M e^{f(\textbf{x})^T f(\textbf{v}_i)}\bigg), e^{-1/t}\bigg\}.
 \end{equation}
 
 Using this loss on SimCLR framework allowed to achieve higher accuracy compared to the regular biased loss. With a similar theoretical inference, this work is aimed at developing a new algorithm, that would additionally focus on eliminating bias caused by False Positives.
 
-\paragraph{\underline{Tasks:}} 
-\begin{itemize}
-  \item reproduce Debiased Contrastive Learning results
-  \item develop novel debiased contrastive loss that accounts for False Positives.
-  \item test the algorithm on CIFAR10 and MNIST datasets
-\end{itemize}
-
+% \paragraph{\underline{Tasks:}} 
+% \begin{itemize}
+%   \item reproduce Debiased Contrastive Learning results
+%   \item develop novel debiased contrastive loss that accounts for False Positives.
+%   \item test the algorithm on CIFAR10 and MNIST datasets
+% \end{itemize}
 
 \subsection{False Positive Samples} \label{FP}
 False Positive samples can be encountered in contrastive learning due to excessive or inappropriate augmentation. Similar to Debiased Contrastive Learning, we propose to estimate the positive sampling distribution in the loss function.
-\begin{equation}
-p_x^+ (x') = \frac{p(x') - \tau^- p^-_x(x')}{\tau^+}
+
+\begin{equation}  \label{eq:8}
+p_x^+ (\textbf{x}') = \frac{p(\textbf{x}') - \tau^- p^-_x(\textbf{x}')}{\tau^+}
 \end{equation}
-Contrary to Debiased Contrastive Learning, drawing samples from $p(x')$ will also include positive labelled datapoints, since some of them could be actually negative. With $N \to \infty$:
-\begin{equation}
-\mathbb{E}_{\substack{x \sim p \\ x^+ \sim p_x^+ \\ \{x_i^-\}_{i=1}^N \sim {p_x^-}^N}} \bigg[ - \log \frac{\exp(f^T f^+)}{\exp(f^T f^+) + \sum_{i=1}^N \exp(f^T f_i^-)} \bigg] \longrightarrow \mathbb{E}_{\substack{x \sim p \\ x^- \sim p_x^-}} \bigg[ - \log \frac{R}{R + N \mathbb{E}_{x^- \sim p_x^-} \exp(f^T f^-)} \bigg],
+
+Contrary to Debiased Contrastive Learning, drawing samples from $p(\textbf{x}')$ will also include positive labelled datapoints, since some of them could be actually negative. 
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+
+\begin{lemma}
+% \normalfont 
+With $N \to \infty$:
+\begin{equation} \label{eq:9}
+\mathbb{E}_{\substack{\textbf{x} \sim p \\ \textbf{x}^+ \sim p_x^+ \\ \{\textbf{x}_i^-\}_{i=1}^N \sim {p_x^-}^N}} \bigg[ - \log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)}}{e^{f(\textbf{x})^T f(\textbf{x}^+)} + \sum_{i=1}^N e^{f(\textbf{x})^T f(\textbf{x}_i^-)}} \bigg] \longrightarrow
+\mathbb{E}_{\substack{\textbf{x} \sim p \\ \textbf{x}^- \sim p_x^-}} \bigg[ - \log \frac{R}{R + N \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}^-)}} \bigg],
 \end{equation}
 
 where
-\begin{equation}
-R = \frac{1}{\tau^+} (\mathbb{E}_{x' \sim p} \exp(f^Tf') - \tau^- \mathbb{E}_{x^- \sim p_x^-} \exp(f^tf^-))
+\begin{equation}  \label{eq:10}
+R = \frac{1}{\tau^+} \big(\mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^T f(\textbf{x}')} - \tau^- \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}^-)}\big).
+\end{equation}
+\end{lemma}
+
+\renewcommand\qedsymbol{$\blacksquare$}
+\begin{proof}
+Since the expression inside the expectation is bounded, we can apply Dominated convergence theorem:
+
+\begin{flalign*}
+&\lim_{N \to \infty} \mathbb{E} \bigg[ - \log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)}}{e^{f(\textbf{x})^T f(\textbf{x}^+)} + \sum_{i=1}^N e^{f(\textbf{x})^T f(\textbf{x}_i^-)}} \bigg] = \mathbb{E} \bigg[ \lim_{N \to \infty} - \log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)}}{e^{f(\textbf{x})^T f(\textbf{x}^+)} + \sum_{i=1}^N e^{f(\textbf{x})^T f(\textbf{x}_i^-)}} \bigg] = &\\
+& = \mathbb{E} \bigg[ - \log \frac{\mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^T f(\textbf{x}^+)}}{\mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^T f(\textbf{x}^+)} + N \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}^-)}}\bigg]
+\end{flalign*}
+
+Using \ref{eq:8} and linearity of the expectation we complete the proof:
+$$\mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^T f(\textbf{x}^+)} = \frac{1}{\tau^+} \big(\mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^T f(\textbf{x}')} - \tau^- \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}^-)}\big) = R.$$
+\end{proof}
+
+We will denote the limit by $\tilde{L}_{\text{DebiasedPos}}^N$ and rewrite it, multiplying the nominator and the denominator of the under-logarithm expression by $\tau^+$:
+
+\begin{equation} \label{eq:11}
+\tilde{L}_{\text{DebiasedPos}}^N (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \textbf{x}^- \sim p_x^-}} \bigg[ - \log \frac{\mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^T f(\textbf{x}')} - \tau^- \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}{\mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^T f(\textbf{x}')} + \big(N \tau^+ - \tau^-\big) \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}\bigg]
 \end{equation}
 
 With finite N:
-\begin{equation} \label{eq:11}
-L_{\text{Debiased}}^N (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim {p^-}^N \\ v \sim p_x^+}} \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg],
+\begin{equation} \label{eq:12}
+L_{\text{DebiasedPos}}^N (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \{\textbf{u}_i\}_{i=1}^N \sim {p_x^-}^N \\ \textbf{v} \sim p_x^+}} \bigg[-\log \frac{P_{\text{emp}} (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \textbf{v}) - \tau^- P_{\text{emp}}^- (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N)} {P_{\text{emp}} (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \textbf{v})+ \big(N \tau^+ - \tau^-\big) P_{\text{emp}}^- (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N) }\bigg],
 \end{equation}
 
 where
-\begin{equation}
-R^-= \frac{1}{N} \sum\limits_{i=1}^N \exp(f(x)^Tf(u_i));
+\begin{equation} \label{eq:13}
+P_{\text{emp}} (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \textbf{v}) = \frac{1}{N+2} \bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} + e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}\bigg);
 \end{equation}
 
-\begin{equation}
-R' = \exp(f(x)^T f(v)) + R^-
-\end{equation}
-
-When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised} we will aggregate using the summation over positives located outside of the log (which yields better accuracy for supervised contrastive losses rather than summation inside of the log):
 \begin{equation} \label{eq:14}
-L_{\text{Debiased}}^{N, M} (f) = \mathbb{E}_{\substack{x \sim p \\ \{u_i\}_{i=1}^N \sim p^-^N \\ \{v_i\}_{i=1}^M\sim p^+^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{R' - \tau^- R^-}{R' + (N \tau^+ - \tau^-) R^-}\bigg]
+P_{\text{emp}}^- (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N) = \frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)}.
 \end{equation}
 
-\subsection{Wrong Anchor}
-This issue arises in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weigh the losses by the cosine similarity of the anchor image vector and the description text vector.
+\begin{restatable}[]{thm}{asympt}
+\label{thm:asympt}
+If $M = 1$, for any embedding f and any $\delta > 0$ exists large enough N, that
+\begin{equation} \label{eq:12}
+\big|\tilde{L}_{\text{DebiasedPos}}^N (f) - L_{\text{DebiasedPos}}^N (f)\big| \leq \bigg[\bigg(1 + \frac{\tau^-}{\tau^+} + \delta\bigg) \sqrt{\frac{\pi}{2N}} + \bigg(1 + \frac{1}{\tau^+}\bigg) \sqrt{\frac{\pi}{2N + 2}}\bigg] e^{3/2}
+\end{equation}
+\end{restatable}
 
-\begin{equation} \label{eq:15}
-L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+ + \sum_{i=1}^N \exp(f^T f_i^-)}
+When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised} we will aggregate using the summation over positives located outside of the log (which yields better accuracy for supervised contrastive losses rather than summation inside of the log).
+
+\begin{equation} \label{eq:14}
+L_{\text{DebiasedPos}}^{N, M} (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \{\textbf{u}_i\}_{i=1}^N \sim {p^-}^N \\ \{\textbf{v}_i\}_{i=1}^M\sim {p^+}^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{P_{\text{emp}} - \tau^- P_{\text{emp}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}\bigg]
 \end{equation}
 
+In addition, we will try a new method of combining losses, that takes all possible pairs of same-class (positive) elements, and averages all $L_{\text{DebiasedPos}}^N (f)$ losses.
+
+
+% \subsection{Wrong Anchor}
+% This issue arises in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weigh the losses by the cosine similarity of the anchor image vector and the description text vector.
+
+% \begin{equation} \label{eq:15}
+% L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+ + \sum_{i=1}^N \exp(f^T f_i^-)}
+% \end{equation}
 
 \section{Experiment}
 \subsection{Baseline Reproduction}
@@ -204,9 +250,6 @@ The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with
 \label{fig:fig1}
 \end{figure}
 
-\subsection{Testing New Loss}
-We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{fig:fig2} shows a tangible difference between the performances of the novel loss and the previous losses. The accuracy advantage is prevalent from the very first steps of training both for Top-1 and Top-5 accuracy, meaning Positive-Debiased loss is more efficient in the early stages of training.
-
 \begin{figure}[!htb]
 \minipage{0.49\textwidth}
 \includegraphics[width=\linewidth]{figures/3_losses.png}
@@ -218,7 +261,9 @@ We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{f
 \label{fig:fig2}
 \end{figure}
 
-To test the performance of the loss under the assumptions made in \ref{FP}, we artificially exclude False Negative errors via accessing ground truth labels during training, and discover that Positive-Debiased loss still outperforms Negative-Debiased loss [Figure \ref{fig:fig3}].
+\subsection{Testing New Loss}
+We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{fig:fig2} shows a tangible difference between the performances of the novel loss and the previous losses. The accuracy advantage is prevalent from the very first steps of training both for Top-1 and Top-5 accuracy, meaning Positive-Debiased loss is more efficient in the early stages of training.
+
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_dropfn.png}
@@ -226,7 +271,7 @@ To test the performance of the loss under the assumptions made in \ref{FP}, we a
 \label{fig:fig3}
 \end{figure}
 
-To understand if Positive-Debiased loss is robust to noise, we apply Gaussian blur on train images with probability 0.3, and thus increase the False Positive rate. Figure \ref{fig:fig4} demonstrates that Positive-Debiased loss is able to mitigate False Positive errors significantly better than Negative-Debiased and Contrastive losses.
+To test the performance of the loss under the assumptions made in \ref{FP}, we artificially exclude False Negative errors via accessing ground truth labels during training, and discover that Positive-Debiased loss still outperforms Negative-Debiased loss [Figure \ref{fig:fig3}].
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_noise.png}
@@ -234,12 +279,17 @@ To understand if Positive-Debiased loss is robust to noise, we apply Gaussian bl
 \label{fig:fig4}
 \end{figure}
 
-Additionally we test all three losses with increased positive sample size M [Figure \ref{fig:fig5}]. Larger M leads to better estimate of the loss both for Positive- and Negative-Debiased losses, yielding better accuracy as a result. It is worth noting that in all of the experiments Positive-Debiased loss achieves better accuracy in the earlier stages of training both for Top-1 and Top-5 scores.
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_M=2.png}
 \caption{Classification accuracy on CIFAR10 with increased positive sample size M}
 \label{fig:fig5}
 \end{figure}
+
+To understand if Positive-Debiased loss is robust to noise, we apply Gaussian blur on train images with probability 0.3, and thus increase the False Positive rate. Figure \ref{fig:fig4} demonstrates that Positive-Debiased loss is able to mitigate False Positive errors significantly better than Negative-Debiased and Contrastive losses.
+
+
+Additionally we test all three losses with increased positive sample size M [Figure \ref{fig:fig5}]. Larger M leads to better estimate of the loss both for Positive- and Negative-Debiased losses, yielding better accuracy as a result. It is worth noting that in all of the experiments Positive-Debiased loss achieves better accuracy in the earlier stages of training both for Top-1 and Top-5 scores.
+
 
 \noindent\rule{16cm}{0.4pt}
 
@@ -298,7 +348,153 @@ Additionally we test all three losses with increased positive sample size M [Fig
 % 	\label{tab:table}
 % \end{table}
 
+\clearpage
 \bibliographystyle{unsrtnat}
 \bibliography{references}
+
+\appendix
+\newpage
+\section{Proof of Theorem 2}
+We recall \cref{thm:asympt}:
+
+\asympt*
+
+\begin{proof}
+Let us denote:
+\begin{flalign*}
+    &P_{\text{est}} := \mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^Tf(\textbf{x}')}&\\
+    &P_{\text{est}}^- := \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^Tf(\textbf{x}^-)}&\\
+    &A_1 := -\log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-}&\\
+    &A_2 := -\log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}&\\
+    &A_3 := -\log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}&\\
+    &A_4 := -\log \frac{P_{\text{emp}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}&\\
+    &A_5 := -\log \frac{P_{\text{emp}} - \tau^- P_{\text{emp}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}
+\end{flalign*}
+Note that $e^{-1} \leq P_{\text{est}}, P_{\text{est}}^- \leq e$. We extend the proofs of Lemma A.2 and Theorem 3 from \citep{chuang2021debiased} to get results for DebiasedPos Loss.
+
+\begin{enumerate}[leftmargin=*]
+    \item
+\begin{flalign*}
+    &\Delta_1 := |A_2 - A_1| = \bigg| -\log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} + \log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-} \bigg|.&\\
+    &\forall \varepsilon > 0: \mathbb{P} (\Delta_1 \geq \varepsilon) = \mathbb{P} \bigg(\bigg|\log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-\}\bigg| \geq \varepsilon \bigg) = &\\
+    & = \mathbb{P} \bigg(\log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-\} \geq \varepsilon \bigg) + &\\
+    & = \mathbb{P} \bigg(\log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-\} \leq -\varepsilon \bigg)
+\end{flalign*}
+
+The first term can be bounded as:
+\begin{flalign*}
+    &\mathbb{P} \bigg(\log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-\} \geq \varepsilon \bigg) =&\\
+    &= \mathbb{P} \bigg(\log \frac{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-} \geq \varepsilon \bigg)
+        \leq
+    \mathbb{P} \bigg(\frac{(N \tau^+ - \tau^-)(P_{\text{emp}}^- - P_{\text{est}}^-)}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-} \geq \varepsilon \bigg)=&\\
+    &= \mathbb{P} \bigg(P_{\text{emp}}^- - P_{\text{est}}^- \geq \varepsilon \bigg\{\frac{1}{N \tau^+ - \tau^-} P_{\text{est}} + P_{\text{est}}^- \bigg\}\bigg)
+        \leq
+    \mathbb{P} (P_{\text{emp}}^- - P_{\text{est}}^- \geq \varepsilon e^{-1})&\\
+\end{flalign*}
+
+Here we used the fact that $\log x \leq x - 1$ for $x > 0$, and $1/(N \tau^+ - \tau^-) P_{\text{est}} + P_{\text{est}}^- \geq e^{-1}$. Likewise bounding the second term:
+$$\mathbb{P} \bigg(\log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{est}}^-\} \leq -\varepsilon \bigg) \leq \mathbb{P} (P_{\text{est}}^- - P_{\text{emp}}^- \geq \varepsilon e^{-1})$$
+
+and applying Hoeffding’s inequality, we have:
+\begin{flalign*}
+    &\mathbb{P} (\Delta_1 \geq \varepsilon) \leq \mathbb{P} (|P_{\text{emp}}^- - P_{\text{est}}^-| \geq \varepsilon e^{-1}) = \mathbb{P} \bigg(\bigg|\frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} - \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^Tf(\textbf{x}^-)}\bigg| \geq \varepsilon e^{-1}\bigg) \leq&\\
+    &\leq 2 \exp\bigg(-\frac{2N \varepsilon^2 e^{-2}}{e - e^{-1}} \bigg) \leq 2 \exp\bigg(-\frac{2N \varepsilon^2}{e^3} \bigg) &\\
+\end{flalign*}
+
+Finally, we write the expectation of $\Delta_1$ as the integral of its tail probability
+\begin{flalign*}
+    &\big|\mathbb{E} A_2 - \mathbb{E} A_1 \big| \leq \mathbb{E} \Delta_1 \leq \int_0^\infty 2 \exp\bigg(-\frac{2N \varepsilon^2}{e^3} \bigg) d \varepsilon = \sqrt{\frac{\pi}{2N}} e^{3/2}.
+\end{flalign*}
+
+    \item
+\begin{flalign*}
+    &\Delta_2 := |A_3 - A_2| = \bigg| -\log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} + \log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} \bigg|.&\\
+    &\forall \varepsilon > 0: \mathbb{P} (\Delta_2 \geq \varepsilon) = \mathbb{P} \bigg(\bigg|\log \{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\}\bigg| \geq \varepsilon \bigg)&\\
+\end{flalign*}
+
+Like before, we split the probability into sum of two terms, and bound the first term as:
+\begin{flalign*}
+    &\mathbb{P} \bigg(\log \{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} \geq \varepsilon \bigg) =&\\
+    &= \mathbb{P} \bigg(\log \frac{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} \geq \varepsilon \bigg)
+        \leq
+    \mathbb{P} \bigg(\frac{P_{\text{emp}} - P_{\text{est}}}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} \geq \varepsilon \bigg)=&\\
+    &= \mathbb{P} \bigg(P_{\text{emp}} - P_{\text{est}} \geq \varepsilon \big\{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\big\}\bigg)
+        \leq
+    \mathbb{P} (P_{\text{emp}} - P_{\text{est}} \geq \varepsilon e^{-1})&\\
+\end{flalign*}
+
+This holds because with $N$ big enough, $N \tau^+ \geq \tau^-$, and thus $1/(N \tau^+ - \tau^-) P_{\text{est}} + P_{\text{est}}^- \geq e^{-1}$.
+\begin{flalign*}
+    &\mathbb{P} (\Delta_2 \geq \varepsilon) \leq \mathbb{P} (|P_{\text{emp}} - P_{\text{est}}| \geq \varepsilon e^{-1}) = &\\
+    &= \mathbb{P} \bigg(\bigg| \frac{1}{N+2} \bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} + e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}\bigg) - \mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^Tf(\textbf{x}')} \bigg| \geq \varepsilon e^{-1}\bigg) \leq&\\
+    &\leq 2 \exp\bigg(-\frac{2(N+2) \varepsilon^2}{e^3} \bigg) &\\
+    &\big|\mathbb{E} A_3 - \mathbb{E} A_2 \big| \leq \mathbb{E} \Delta_2 \leq \int_0^\infty 2 \exp\bigg(-\frac{2(N+2) \varepsilon^2}{e^3} \bigg) d \varepsilon = \sqrt{\frac{\pi}{2(N+2)}} e^{3/2}.
+\end{flalign*}
+
+    \item
+\begin{flalign*}
+    &\Delta_3 := |A_3 - A_4| = \bigg| -\log \frac{P_{\text{est}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} + \log \frac{P_{\text{emp}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}\bigg|.&\\
+    &\forall \varepsilon > 0: \mathbb{P} (\Delta_3 \geq \varepsilon) = \mathbb{P} \bigg(\bigg|\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{est}} - \tau^- P_{\text{est}}^-\}\bigg| \geq \varepsilon \bigg)&\\
+\end{flalign*}
+
+Like before, we split the probability into sum of two terms, and bound the first term as:
+\begin{flalign*}
+    &\mathbb{P} \bigg(\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{est}} - \tau^- P_{\text{est}}^-\} \geq \varepsilon \bigg) =&\\
+    &= \mathbb{P} \bigg(\log \frac{P_{\text{emp}} - \tau^- P_{\text{est}}^-}{P_{\text{est}} - \tau^- P_{\text{est}}^-} \geq \varepsilon \bigg)
+        \leq
+    \mathbb{P} \bigg(\frac{P_{\text{emp}} - P_{\text{est}}}{P_{\text{est}} - \tau^- P_{\text{est}}^-} \geq \varepsilon \bigg)=&\\
+    &= \mathbb{P} \bigg(P_{\text{emp}} - P_{\text{est}} \geq \varepsilon \big\{P_{\text{est}} - \tau^-P_{\text{est}}^-\big\}\bigg)
+        \leq
+    \mathbb{P} (P_{\text{emp}} - P_{\text{est}} \geq \varepsilon \tau^+ e^{-1})&\\
+\end{flalign*}
+
+This time the bound is different, because $P_{\text{est}} - \tau^-P_{\text{est}}^- = \tau^+ P_{\text{est}}^+ := \tau^+ \mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^Tf(\textbf{x}^+)} \geq \tau^+ e^{-1}$.
+\begin{flalign*}
+    &\mathbb{P} (\Delta_3 \geq \varepsilon) \leq \mathbb{P} (|P_{\text{emp}} - P_{\text{est}}| \geq \varepsilon \tau^+ e^{-1}) = &\\
+    &= \mathbb{P} \bigg(\bigg| \frac{1}{N+2} \bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} + e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}\bigg) - \mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^Tf(\textbf{x}')} \bigg| \geq \varepsilon \tau^+ e^{-1}\bigg) \leq&\\
+    &\leq 2 \exp\bigg(-\frac{2(N+2) \varepsilon^2 (\tau^+)^2}{e^3} \bigg) &\\
+    &\big|\mathbb{E} A_3 - \mathbb{E} A_4 \big| \leq \mathbb{E} \Delta_3 \leq \int_0^\infty 2 \exp\bigg(-\frac{2(N+2) \varepsilon^2 (\tau^+)^2}{e^3} \bigg) d \varepsilon = \frac{1}{\tau^+} \sqrt{\frac{\pi}{2(N+2)}} e^{3/2}.
+\end{flalign*}
+
+    \item
+\begin{flalign*}
+    &\Delta_4 := |A_5 - A_4| = \bigg| -\log \frac{P_{\text{emp}} - \tau^- P_{\text{emp}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} + \log \frac{P_{\text{emp}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} \bigg|.&\\
+    &\forall \varepsilon > 0: \mathbb{P} (\Delta_4 \geq \varepsilon) = \mathbb{P} \bigg(\bigg|\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{emp}} - \tau^- P_{\text{emp}}^-\}\bigg| \geq \varepsilon \bigg)&\\
+\end{flalign*}
+
+Like before, we split the probability into sum of two terms, and bound the first term as:
+\begin{flalign*}
+    &\mathbb{P} \bigg(\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{emp}} - \tau^- P_{\text{emp}}^-\} \geq \varepsilon \bigg) =&\\
+    &= \mathbb{P} \bigg(\log \frac{P_{\text{emp}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} - \tau^- P_{\text{emp}}^-} \geq \varepsilon \bigg)
+        \leq
+    \mathbb{P} \bigg(\frac{\tau^-(P_{\text{emp}}^- - P_{\text{est}}^-)}{P_{\text{emp}} - \tau^- P_{\text{emp}}^-} \geq \varepsilon \bigg)=&\\
+    &= \mathbb{P} \bigg(P_{\text{emp}}^- - P_{\text{est}}^- \geq \varepsilon \bigg\{\frac{1}{\tau^-} P_{\text{emp}} - P_{\text{emp}}^-\bigg\}\bigg)
+        \leq
+    \mathbb{P} \bigg(P_{\text{emp}}^- - P_{\text{est}}^- \geq \varepsilon \bigg( \frac{\tau^+}{\tau^-} e^{-1} - \delta\bigg)\bigg)&\\
+\end{flalign*}
+
+To get a lower bound of the expression in braces for big $N$, we will take a slightly smaller value than its limit.
+\begin{flalign*}
+    &\frac{1}{\tau^-} P_{\text{emp}} - P_{\text{emp}}^- = \frac{1}{\tau^-} \frac{1}{N+2} \bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} + e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}\bigg) - \frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} =&\\
+    &= \bigg(\frac{1}{\tau^-}\frac{1}{N+2} - \frac{1}{N}\bigg)\bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)}\bigg) + \frac{e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}}{\tau^-(N+2)} \xrightarrow[N \to \infty]{} \frac{e^{-1}}{\tau^-} - e^{-1} = \frac{\tau^+}{\tau^-} e^{-1}&\\
+\end{flalign*}
+
+\begin{flalign*}
+    &\mathbb{P} (\Delta_4 \geq \varepsilon) \leq \mathbb{P} \bigg(|P_{\text{emp}}^- - P_{\text{est}}^-| \geq \varepsilon \bigg( \frac{\tau^+}{\tau^-} e^{-1} - \delta\bigg)\bigg) = &\\
+    &= \mathbb{P} \bigg(\bigg| \frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} - \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^Tf(\textbf{x}^-)} \bigg| \geq \varepsilon \bigg( \frac{\tau^+}{\tau^-} e^{-1} - \delta\bigg)\bigg) \leq&\\
+    &\leq 2 \exp\bigg(-\frac{2N \varepsilon^2 ( (\tau^+/ \tau^-) e^{-1} - \delta)^2}{e} \bigg) =: 2 \exp\bigg(-\frac{2N \varepsilon^2 ( \tau^+/\tau^- - \delta)^2}{e^3} \bigg)&\\
+    &\big|\mathbb{E} A_5 - \mathbb{E} A_4 \big| \leq \mathbb{E} \Delta_4 \leq \int_0^\infty 2 \exp\bigg(-\frac{2N \varepsilon^2 ( \tau^+/\tau^- - \delta)^2}{e^3} \bigg) d \varepsilon =&\\
+    &= \frac{1}{\tau^+/ \tau^- - \delta} \sqrt{\frac{\pi}{2N}} e^{3/2} =: \bigg(\frac{\tau^-}{\tau^+} - \delta\bigg) \sqrt{\frac{\pi}{2N}} e^{3/2}.&\\
+\end{flalign*}
+
+\end{enumerate}
+
+The result follows by summing all four absolute differences:
+\begin{flalign*}
+    &\big|\tilde{L}_{\text{DebiasedPos}}^N (f) - L_{\text{DebiasedPos}}^N (f)\big| = \big|\mathbb{E} A_1 - \mathbb{E} A_5\big| \leq \big|\mathbb{E} A_1 - \mathbb{E} A_2\big| + \big|\mathbb{E} A_2 - \mathbb{E} A_3\big| + \big|\mathbb{E} A_3 - \mathbb{E} A_4\big| + \big|\mathbb{E} A_4 - \mathbb{E} A_5\big| \leq&\\
+    &\leq \bigg[\bigg(1 + \frac{\tau^-}{\tau^+} + \delta\bigg) \sqrt{\frac{\pi}{2N}} + \bigg(1 + \frac{1}{\tau^+}\bigg) \sqrt{\frac{\pi}{2(N + 2)}}\bigg] e^{3/2}&\\
+\end{flalign*}
+
+\end{proof}
 
 \end{document}

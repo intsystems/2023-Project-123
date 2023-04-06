@@ -89,9 +89,9 @@ class DebiasedNegLoss(ContrastiveLossBase):
 
         pos_m = [pos]
         for vec in out_m:
-            pos_1 = torch.exp(torch.sum(out_1 * vec, dim=-1) / self.temperature)
-            pos_2 = torch.exp(torch.sum(out_2 * vec, dim=-1) / self.temperature)
-            pos_new = torch.cat([pos_1, pos_2], dim=0)
+            pos_1 = torch.exp(torch.sum(out_1 * vec, dim=-1) / self.temperature)  # shape (bs)
+            pos_2 = torch.exp(torch.sum(out_2 * vec, dim=-1) / self.temperature) # shape (bs)
+            pos_new = torch.cat([pos_1, pos_2], dim=0)  # shape (2 * bs)
             pos_m.append(pos_new)
         pos_m = torch.stack(pos_m, dim=0).mean(dim=0)
 
@@ -178,6 +178,53 @@ class DebiasedPosLossV2(nn.Module):
         return "Temperature: {}\nCuda: {}\nDrop FN{}\nTau plus: {}".format(
             self.temperature, self.cuda, self.drop_fn, self.tau_plus)
 
+class DebiasedPosLossV3(nn.Module):
+    def __init__(self, temperature, cuda, drop_fn, tau_plus):
+        super().__init__()
+        self.temperature: float = temperature
+        self.cuda: bool = cuda
+        self.drop_fn: bool = drop_fn
+        self.tau_plus: float = tau_plus
+
+    def forward(self, out_1, out_2, out_m, target):
+        batch_size = out_1.shape[0]
+
+        # estimator g()
+        N = batch_size * 2 - 2
+        # neg score
+        out = torch.cat([out_1, out_2], dim=0)  # shape (2 * bs, fdim)
+        # скалярное произведение всех пар
+        neg = torch.exp(torch.mm(out, out.t().contiguous()) / self.temperature)  # shape (2 * bs, 2 * bs)
+        p_estimate = neg.sum(dim=-1) / (N + 2) # shape (2 * bs)
+        # Drop false-negaive pairs
+        if self.drop_fn:
+            mask = get_target_mask(target)
+            if self.cuda:
+                mask = mask.cuda()
+            neg = neg.masked_fill(mask, 0.0)
+
+        # 1ая часть (2 * bs, bs) соответствует одной картинке, 2ая часть (2 * bs, bs+1 - 2 * bs) - другой
+        mask = get_negative_mask(batch_size)  # shape (2 * bs, 2 * bs)
+        if self.cuda:
+            mask = mask.cuda()
+
+        # оставляем только негативные примеры
+        neg = neg.masked_select(mask).view(2 * batch_size, -1)  # shape (2 * bs, N)
+
+        tau_minus = 1 - self.tau_plus
+
+        g = neg.mean(dim=-1)  # shape (2 * bs)
+        Ng = (N * self.tau_plus - tau_minus) * g
+        o1 = p_estimate - tau_minus * g  # shape (2 * bs)
+        o2 = p_estimate + g  # shape (2 * bs)
+
+        loss = (-torch.log(o1 / o2)).mean()
+        return loss
+
+    def extra_repr(self):
+        return "Temperature: {}\nCuda: {}\nDrop FN{}\nTau plus: {}".format(
+            self.temperature, self.cuda, self.drop_fn, self.tau_plus)
+
 
 class CombinationLoss(nn.Module):
     def __init__(self, temperature, cuda, drop_fn, tau_plus, alpha):
@@ -218,6 +265,8 @@ def get_loss(
         return DebiasedPosLoss(temperature, cuda, drop_fn, tau_plus)
     if name == "DebiasedPosV2":
         return DebiasedPosLossV2(temperature, cuda, drop_fn, tau_plus)
+    if name == "DebiasedPosV3":
+        return DebiasedPosLossV3(temperature, cuda, drop_fn, tau_plus)
     if name == "Combination":
         return CombinationLoss(temperature, cuda, drop_fn, tau_plus, alpha)
     raise Exception("Unknown loss {}".format(name))
