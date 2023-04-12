@@ -68,7 +68,7 @@ pdfkeywords={First keyword, Second keyword, More},
 \maketitle
 
 \begin{abstract}
-	Recently there has been a renewed interest in using contrastive learning for self-supervised representation learning. A popular method for learning representations without labels is to compare similar (positive) and dissimilar (negative) pairs of samples. However, negative samples are often chosen randomly, which means that they could be of the same class. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. The experiments are performed on MNIST and CIFAR10 datasets. This will further improve availability of accurate models for classification in tasks where extensive labeling is expensive or inaccessible.
+	Recently there has been a renewed interest in using contrastive learning for self-supervised representation learning. A popular method for learning representations without labels is to compare similar (positive) and dissimilar (negative) pairs of samples. However, negative samples are often chosen randomly, which means that they could be of the same class. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. The experiments are performed on CIFAR10 dataset. This will further improve availability of accurate models for classification in tasks where extensive labeling is expensive or inaccessible.
 \end{abstract}
 
 
@@ -106,10 +106,6 @@ In \citep{chuang2021debiased} the distribution over classes is denoted by $\rho(
 \begin{equation}  \label{eq:2}
 L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{\textbf{x} \sim p, \textbf{x}^+ \sim p^+_x,\\ \textbf{x}_i^- \sim p_x^-}} \bigg[-\log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)}}{e^{f(\textbf{x})^T f(\textbf{x}^+)} + \sum _{i=1}^N e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}\bigg]
 \end{equation}
-
-% \begin{equation} 
-% L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{x \sim p, x^+ \sim p^+_x,\\ x_i^- \sim p_x^-}} \bigg[-\log \frac{\exp (\text{sim}(x, x^+))}{\exp (\text{sim}(x, x^+) + \sum _{i=1}^N \exp (\text{sim}(x, x^-)}\bigg]
-% \end{equation}
 
 In practice, $p_x^-(\textbf{x}_i^-)$ is unavailable. Thus, the standard solution is to sample negative examples $\textbf{x}_i^-$ from the unlabeled $p(\textbf{x})$ instead. When drawn from $p(\textbf{x})$, the sample $\textbf{x}_i^-$ will be of the same class as $\textbf{x}$ with probability $\tau^+$.
 
@@ -208,22 +204,27 @@ P_{\text{emp}} (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \textbf{v}) = \frac{1}{N+2
 P_{\text{emp}}^- (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N) = \frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)}.
 \end{equation}
 
+When $N$ is finite and $M=1$, theorem \ref{thm:asympt} bounds the error as decreasing with rate $O(N^{-1/2})$.
+
 \begin{restatable}[]{thm}{asympt}
 \label{thm:asympt}
 If $M = 1$, for any embedding f and any $\delta > 0$ exists large enough N, that
-\begin{equation} \label{eq:12}
+\begin{equation} \label{eq:15}
 \big|\tilde{L}_{\text{DebiasedPos}}^N (f) - L_{\text{DebiasedPos}}^N (f)\big| \leq \bigg[\bigg(1 + \frac{\tau^-}{\tau^+} + \delta\bigg) \sqrt{\frac{\pi}{2N}} + \bigg(1 + \frac{1}{\tau^+}\bigg) \sqrt{\frac{\pi}{2N + 2}}\bigg] e^{3/2}
 \end{equation}
 \end{restatable}
 
-When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised} we will aggregate using the summation over positives located outside of the log (which yields better accuracy for supervised contrastive losses rather than summation inside of the log).
+\subsection{Positive Sample Aggregation} \label{pos_aggr_theory}
 
-\begin{equation} \label{eq:14}
+When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised} we will aggregate losses using the summation over positive samples located outside of the log. In our case this means taking all possible pairs of same-class (positive) elements, and averaging all corresponding $L_{\text{DebiasedPos}}^N (f)$ losses. We will refer to this method as \textit{pos-grouping}.
+
+% (which yields better accuracy for supervised contrastive losses rather than summation inside of the log)
+
+\begin{equation} \label{eq:16}
 L_{\text{DebiasedPos}}^{N, M} (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \{\textbf{u}_i\}_{i=1}^N \sim {p^-}^N \\ \{\textbf{v}_i\}_{i=1}^M\sim {p^+}^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{P_{\text{emp}} - \tau^- P_{\text{emp}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}\bigg]
 \end{equation}
 
-In addition, we will try a new method of combining losses, that takes all possible pairs of same-class (positive) elements, and averages all $L_{\text{DebiasedPos}}^N (f)$ losses.
-
+Another way to aggregate positive samples is to do so inside the estimates $P_{\text{emp}}$, following the example of \citep{chuang2021debiased} which we will refer to as \textit{loss-combination}. Emperically, the experiments in Section \ref{pos_aggr} show that while \textit{pos-grouping} is computationally less expensive, \textit{loss-combination} yields better accuracy with larger M.
 
 % \subsection{Wrong Anchor}
 % This issue arises in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weigh the losses by the cosine similarity of the anchor image vector and the description text vector.
@@ -235,20 +236,23 @@ In addition, we will try a new method of combining losses, that takes all possib
 \section{Experiment}
 \subsection{Baseline Reproduction}
 
-The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:6}. We use STL10 \citep{pmlr-v15-coates11a} dataset, an image recognition dataset for developing unsupervised feature learning algorithms. It contains 100000 unlabeled images of 96x96 pixels for unsupervised learning. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam} with learning rate 0.001 and batch size 512. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
+The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:6}. We use CIFAR10 \citep{krizhevsky2009learning} dataset, an image recognition dataset for image classification. It consists of 60000 32x32 color images in 10 classes. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam}, learning rate 0.001, and batch size 512. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
 
- The results are shown in Figure \ref{fig:fig1}. While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
+ The primary results are shown in Figure \ref{fig:fig2}. While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
 
-\begin{figure}[!htb]
-\minipage{0.49\textwidth}
-\includegraphics[width=\linewidth]{figures/baseline_acc1.png}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-\includegraphics[width=\linewidth]{figures/baseline_acc5.png}
-\endminipage
-\caption{Classification accuracy on CIFAR10. Negative-Debiased loss is denoted as debiasedNeg.}
-\label{fig:fig1}
-\end{figure}
+% \begin{figure}[!htb]
+% \minipage{0.49\textwidth}
+% \includegraphics[width=\linewidth]{figures/baseline_acc1.png}
+% \endminipage\hfill
+% \minipage{0.49\textwidth}
+% \includegraphics[width=\linewidth]{figures/baseline_acc5.png}
+% \endminipage
+% \caption{Classification accuracy on CIFAR10. Negative-Debiased loss is denoted as debiasedNeg.}
+% \label{fig:fig1}
+% \end{figure}
+
+\subsection{Testing New Loss}
+We run the same experiment for Positive-Debiased loss [\ref{eq:14}]. The code is available at our \href{https://github.com/intsystems/2023-Project-123}{GitHub}. Figure \ref{fig:fig2} shows a tangible difference between the performances of the novel loss and the previous losses. The accuracy advantage is prevalent from the very first steps of training both for Top-1 and Top-5 accuracy, meaning Positive-Debiased loss is more efficient in the early stages of training.
 
 \begin{figure}[!htb]
 \minipage{0.49\textwidth}
@@ -257,13 +261,11 @@ The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with
 \minipage{0.49\textwidth}
 \includegraphics[width=\linewidth]{figures/3_losses_5.png}
 \endminipage
-\caption{Classification accuracy on CIFAR10, Positive-Debiased loss is denoted as debiasedPos.}
+\caption{Classification accuracy on CIFAR10, Negative- and Positive-Debiased losses are denoted as debiasedNeg and debiasedPos.}
 \label{fig:fig2}
 \end{figure}
 
-\subsection{Testing New Loss}
-We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{fig:fig2} shows a tangible difference between the performances of the novel loss and the previous losses. The accuracy advantage is prevalent from the very first steps of training both for Top-1 and Top-5 accuracy, meaning Positive-Debiased loss is more efficient in the early stages of training.
-
+To test the performance of the loss under the assumptions made in \ref{FP}, we artificially exclude False Negative errors via accessing ground truth labels during training, and discover that Positive-Debiased loss still outperforms Negative-Debiased loss [Figure \ref{fig:fig3}].
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_dropfn.png}
@@ -271,82 +273,63 @@ We run the same experiment for Positive-Debiased loss \ref{eq:14}. Figure \ref{f
 \label{fig:fig3}
 \end{figure}
 
-To test the performance of the loss under the assumptions made in \ref{FP}, we artificially exclude False Negative errors via accessing ground truth labels during training, and discover that Positive-Debiased loss still outperforms Negative-Debiased loss [Figure \ref{fig:fig3}].
+To understand if Positive-Debiased loss is robust to noise, we apply Gaussian blur on train images with probability 0.3, and thus increase the False Positive rate. Figure \ref{fig:fig4} demonstrates that Positive-Debiased loss is able to mitigate False Positive errors significantly better than Negative-Debiased and Contrastive losses.
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_noise.png}
-\caption{Classification accuracy on CIFAR10 with increased False Positive rate}
+\caption{Classification accuracy on CIFAR10 with an increased False Positive rate}
 \label{fig:fig4}
 \end{figure}
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_M=2.png}
-\caption{Classification accuracy on CIFAR10 with increased positive sample size M}
+\caption{Classification accuracy on CIFAR10 with an increased positive sample size M}
 \label{fig:fig5}
 \end{figure}
 
-To understand if Positive-Debiased loss is robust to noise, we apply Gaussian blur on train images with probability 0.3, and thus increase the False Positive rate. Figure \ref{fig:fig4} demonstrates that Positive-Debiased loss is able to mitigate False Positive errors significantly better than Negative-Debiased and Contrastive losses.
-
-
 Additionally we test all three losses with increased positive sample size M [Figure \ref{fig:fig5}]. Larger M leads to better estimate of the loss both for Positive- and Negative-Debiased losses, yielding better accuracy as a result. It is worth noting that in all of the experiments Positive-Debiased loss achieves better accuracy in the earlier stages of training both for Top-1 and Top-5 scores.
 
+\begin{figure}
+\includegraphics[width=1\textwidth]{figures/pg_vs_lc.png}
+\caption{Classification accuracy on CIFAR10 with various positive sample aggregations}
+\label{fig:fig6}
+\end{figure}
 
-\noindent\rule{16cm}{0.4pt}
+\subsection{Positive Sample Aggregation} \label{pos_aggr}
+In this experiment we compare methods of aggregation over positive samples introduced in Section \ref{pos_aggr_theory}. We train SimCLR with the same parameters, except for setting batch size to 64 when testing $M=4$ for faster training. As expected, there is a trade-off between accuracy and speed. The results in Table \ref{tab:table} show that \textit{pos-grouping} improves over \textit{loss-combination} in accuracy, but is computationally slower. Figure \ref{fig:fig6} shows that with bigger $M$ the advantage of \textit{loss-combination} over \textit{pos-grouping} gets more significant. 
 
+\begin{table}
+    \caption{Aggregation over M positive samples for DebiasedPos}
+    \centering
+    \begin{tabular}{llllll}
+        \toprule
+        Method  & M & bs    & Training time (min)   & acc@1 & acc@5\\
+        \midrule
+        -   & 1 & 512   & 122.85    & 76.76 & 98.61\\
+        \midrule
+        pos-grouping    & 2 & 512   & \textbf{181.87}   & 80.1  & 98.86\\
+        loss-combination    & 2 & 512   & 192.82    & \textbf{80.5} & \textbf{98.93}\\
+        \midrule
+        pos-grouping    & 4 & 64    & \textbf{278.88}   & 81.75 & 99.01\\
+        loss-combination    & 4 & 64    & 308.25    & \textbf{82.44} & \textbf{99.25}\\
+        \bottomrule
+    \end{tabular}
+    \label{tab:table}
+\end{table}
 
-% \section{Examples of citations, figures, tables, references}
-% \label{sec:others}
+\subsection{Discussion}
+\begin{enumerate}
+    \item Positive-Debiased loss is based on the assumption of true negative samples, i.e. with no False Negative errors, however, it still improves accuracy of classification when this assumption does not hold.
+    \item Another implicit assumption we make is that the classes have uniform distribution, which is not true for many datasets, and it is an interesting direction of further reseach to additionally account for the biases in the class distribution.
+\end{enumerate}
 
-% \subsection{Citations}
-% Citations use \verb+natbib+. The documentation may be found at
-% \begin{center}
-% 	\url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-% \end{center}
+\section{Conclusion}
+In this paper, we propose a new method for debiasing contrastive loss based on mitigating biases caused by False Positive errors. Theoretical analysis shows that computationally Positive-Debiased and baseline losses are equivalent, however, in a scenario with an increased False Positive rate our loss yields better accuracy, which shows that it is more robust. Additionally, Positive-Debiased loss is more dominant in the early epochs. We further explore 2 mehtods of aggregating loss over positive samples, and infer that \textit{pos-grouping} trains faster, while \textit{loss-combination} leads to better performance. 
 
-% Here is an example usage of the two main commands (\verb+citet+ and \verb+citep+): Some people thought a thing \citep{kour2014real, hadash2018estimate} but other people thought something else \citep{kour2014fast}. Many people have speculated that if we knew exactly why \citet{kour2014fast} thought this\dots
+% Interesting directions of future work include (1) trying the debiased objective in semi-supervised learning or few shot learning, and (2) studying the effect of how positive (similar) examples are drawn, e.g., analyzing different data augmentation techniques.
 
-% \subsection{Figures}
-% \lipsum[10]
-% See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
-% \lipsum[11]
+% \noindent\rule{16cm}{0.4pt}
 
-
-
-% \subsection{Tables}
-% See awesome Table~\ref{tab:table}.
-% See Section \ref{sec:headings}.
-
-% The documentation for \verb+booktabs+ (`Publication quality tables in LaTeX') is available from:
-% \begin{center}
-% 	\url{https://www.ctan.org/pkg/booktabs}
-% \end{center}
-
-
-
-
-% \subsection{Lists}
-% \begin{itemize}
-% 	\item Lorem ipsum dolor sit amet
-% 	\item consectetur adipiscing elit.
-% 	\item Aliquam dignissim blandit est, in dictum tortor gravida eget. In ac rutrum magna.
-% \end{itemize}
-
-% \begin{table}
-% 	\caption{Sample table title}
-% 	\centering
-% 	\begin{tabular}{lll}
-% 		\toprule
-% 		\multicolumn{2}{c}{Part}                   \\
-% 		\cmidrule(r){1-2}
-% 		Name     & Description     & Size ($\mu$m) \\
-% 		\midrule
-% 		Dendrite & Input terminal  & $\sim$100     \\
-% 		Axon     & Output terminal & $\sim$10      \\
-% 		Soma     & Cell body       & up to $10^6$  \\
-% 		\bottomrule
-% 	\end{tabular}
-% 	\label{tab:table}
-% \end{table}
 
 \clearpage
 \bibliographystyle{unsrtnat}
