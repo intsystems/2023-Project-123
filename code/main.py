@@ -31,20 +31,20 @@ def train(net, data_loader, loss_criterion, train_optimizer, batch_size, *, cuda
             pos_1, pos_2 = pos_1.cuda(non_blocking=True), pos_2.cuda(non_blocking=True)
             pos_m = [pos.cuda(non_blocking=True) for pos in pos_m]
         t_extract_image = time.time()
-        feature_1, out_1 = net(pos_1)
-        feature_2, out_2 = net(pos_2)
+        _, out_1 = net(pos_1)
+        _, out_2 = net(pos_2)
 
         if m_agg_mode == utils.MAggMode.pos_grouping:
             out_m = []
             for pos_i in pos_m:
-                feature_i, out_i = net(pos_i)
+                _, out_i = net(pos_i)
                 out_m.append(out_i)
             t_forward_pass = time.time()
             loss = loss_criterion(out_1, out_2, out_m, target)
         elif m_agg_mode == utils.MAggMode.loss_combination:
             out_m = [out_1, out_2]
             for pos_i in pos_m:
-                feature_i, out_i = net(pos_i)
+                _, out_i = net(pos_i)
                 out_m.append(out_i)
             t_forward_pass = time.time()
             losses = []
@@ -83,8 +83,6 @@ def train(net, data_loader, loss_criterion, train_optimizer, batch_size, *, cuda
 
         total_num += batch_size
         total_loss += loss.item() * batch_size
-
-        # train_bar.set_description("Train Epoch: [{}/{}] Loss: {:.4f}".format(epoch, epochs, total_loss / total_num))
         t_start = time.time()
     return total_loss / total_num, step
 
@@ -98,7 +96,7 @@ def test(net, memory_data_loader, test_data_loader, *, top_k, class_cnt, cuda=Tr
         for data, _, _, target in memory_data_loader:
             if cuda:
                 data = data.cuda(non_blocking=True)
-            feature, out = net(data)
+            feature, _ = net(data)
             feature_bank.append(feature)
         # [D, N]
         feature_bank = torch.cat(feature_bank, dim=0).t().contiguous()
@@ -112,7 +110,7 @@ def test(net, memory_data_loader, test_data_loader, *, top_k, class_cnt, cuda=Tr
             if cuda:
                 data, target = data.cuda(
                     non_blocking=True), target.cuda(non_blocking=True)
-            feature, out = net(data)
+            feature, _ = net(data)
 
             total_num += data.size(0)
             # compute cos similarity between each feature vector and feature bank ---> [B, N]
@@ -139,11 +137,6 @@ def test(net, memory_data_loader, test_data_loader, *, top_k, class_cnt, cuda=Tr
                 (pred_labels[:, :1] == target.unsqueeze(dim=-1)).any(dim=-1).float()).item()
             total_top5 += torch.sum(
                 (pred_labels[:, :5] == target.unsqueeze(dim=-1)).any(dim=-1).float()).item()
-            # test_bar.set_description(
-            #     "KNN Test Epoch: [{}/{}] Acc@1:{:.2f}% Acc@5:{:.2f}%".format(
-            #         epoch, epochs, total_top1 / total_num * 100, total_top5 / total_num * 100
-            #     )
-            # )
 
     return total_top1 / total_num * 100, total_top5 / total_num * 100
 
@@ -175,8 +168,6 @@ def main(dataset: str, loss: str, root: str, batch_size: int, model_arch, *, cud
     wandb.config.update(config)
     logger.info("\nStart experiment with config: %s\n", config)
     m_agg_mode = utils.MAggMode[m_agg_mode]
-    # if m_agg_mode == utils.MAggMode.pos_grouping and loss != "DebiasedNeg" and num_pos > 1:
-    #     raise Exception("Mean aggregation only available in DebiasedNeg loss")
 
     train_loader = DataLoader(
         get_dataset(dataset, root=root, split="train+unlabeled", num_pos=num_pos,
@@ -234,9 +225,6 @@ def main(dataset: str, loss: str, root: str, batch_size: int, model_arch, *, cud
                 "acc5": test_acc_5,
             })
             logger.info("Epoch %d, acc1: %f", epoch, test_acc_1)
-            # art = wandb.Artifact(f"model_{epoch}", type="model")
-            # art.add_file(model_path)
-            # wandb.log_artifact(art)
         writer.flush()
     writer.close()
 
