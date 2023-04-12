@@ -175,8 +175,8 @@ def main(dataset: str, loss: str, root: str, batch_size: int, model_arch, *, cud
     wandb.config.update(config)
     logger.info("\nStart experiment with config: %s\n", config)
     m_agg_mode = utils.MAggMode[m_agg_mode]
-    if m_agg_mode == utils.MAggMode.pos_grouping and loss != "DebiasedNeg" and num_pos > 1:
-        raise Exception("Mean aggregation only available in DebiasedNeg loss")
+    # if m_agg_mode == utils.MAggMode.pos_grouping and loss != "DebiasedNeg" and num_pos > 1:
+    #     raise Exception("Mean aggregation only available in DebiasedNeg loss")
 
     train_loader = DataLoader(
         get_dataset(dataset, root=root, split="train+unlabeled", num_pos=num_pos,

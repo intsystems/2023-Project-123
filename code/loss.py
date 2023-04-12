@@ -28,6 +28,19 @@ def get_target_mask(target: torch.Tensor) -> torch.Tensor:
     return mask
 
 
+def replace_pos_diagonals(full_matrix, pos_m):
+    """
+    Replace positive diagonals in full_matrix shaped (2bs, 2bs) by pos_m vector
+    """
+    batch_size = full_matrix.shape[0] // 2
+
+    new_matrix = full_matrix.clone()
+
+    new_matrix[range(batch_size), range(batch_size, 2*batch_size)] = pos_m[:batch_size]
+    new_matrix[range(batch_size, 2*batch_size), range(batch_size)] = pos_m[batch_size:]
+    return new_matrix
+
+
 class ContrastiveLossBase(nn.Module):
     def __init__(self, temperature, cuda, drop_fn):
         super().__init__()
@@ -178,6 +191,7 @@ class DebiasedPosLossV2(nn.Module):
         return "Temperature: {}\nCuda: {}\nDrop FN{}\nTau plus: {}".format(
             self.temperature, self.cuda, self.drop_fn, self.tau_plus)
 
+
 class DebiasedPosLossV3(nn.Module):
     def __init__(self, temperature, cuda, drop_fn, tau_plus):
         super().__init__()
@@ -187,36 +201,44 @@ class DebiasedPosLossV3(nn.Module):
         self.tau_plus: float = tau_plus
 
     def forward(self, out_1, out_2, out_m, target):
+        ######################## from super
         batch_size = out_1.shape[0]
 
-        # estimator g()
-        N = batch_size * 2 - 2
-        # neg score
-        out = torch.cat([out_1, out_2], dim=0)  # shape (2 * bs, fdim)
-        # скалярное произведение всех пар
-        neg = torch.exp(torch.mm(out, out.t().contiguous()) / self.temperature)  # shape (2 * bs, 2 * bs)
-        p_estimate = neg.sum(dim=-1) / (N + 2) # shape (2 * bs)
-        # Drop false-negaive pairs
+        out = torch.cat([out_1, out_2], dim=0)  # (2 * bs, fdim)
+        full = torch.exp(torch.mm(out, out.t().contiguous()) / self.temperature)  # (2 * bs, 2 * bs)
         if self.drop_fn:
             mask = get_target_mask(target)
             if self.cuda:
                 mask = mask.cuda()
-            neg = neg.masked_fill(mask, 0.0)
+            full = full.masked_fill(mask, 0.0)
 
-        # 1ая часть (2 * bs, bs) соответствует одной картинке, 2ая часть (2 * bs, bs+1 - 2 * bs) - другой
-        mask = get_negative_mask(batch_size)  # shape (2 * bs, 2 * bs)
-        if self.cuda:
-            mask = mask.cuda()
+        pos = torch.exp(torch.sum(out_1 * out_2, dim=-1) / self.temperature)  # (bs)
+        pos = torch.cat([pos, pos], dim=0)  # (2 * bs)
+        ######################## from super
+
+        pos_m = [pos]
+        for vec in out_m:
+            pos_1 = torch.exp(torch.sum(out_1 * vec, dim=-1) / self.temperature)  # shape (bs)
+            pos_2 = torch.exp(torch.sum(out_2 * vec, dim=-1) / self.temperature) # shape (bs)
+            pos_new = torch.cat([pos_1, pos_2], dim=0)  # shape (2 * bs)
+            pos_m.append(pos_new)
+        pos_m = torch.stack(pos_m, dim=0).mean(dim=0)
+
+        full = replace_pos_diagonals(full, pos_m)
+
+        N = batch_size * 2 - 2
+        p_estimate = full.mean(dim=-1) # shape (2 * bs)
 
         # оставляем только негативные примеры
-        neg = neg.masked_select(mask).view(2 * batch_size, -1)  # shape (2 * bs, N)
+        neg_mask = get_negative_mask(batch_size)  # shape (2 * bs, 2 * bs)
+        if self.cuda:
+            neg_mask = neg_mask.cuda()
+        neg = full.masked_select(neg_mask).view(2 * batch_size, -1)  # shape (2 * bs, N)
 
         tau_minus = 1 - self.tau_plus
-
         g = neg.mean(dim=-1)  # shape (2 * bs)
-        Ng = (N * self.tau_plus - tau_minus) * g
         o1 = p_estimate - tau_minus * g  # shape (2 * bs)
-        o2 = p_estimate + g  # shape (2 * bs)
+        o2 = p_estimate + (N * self.tau_plus - tau_minus) * g  # shape (2 * bs)
 
         loss = (-torch.log(o1 / o2)).mean()
         return loss
