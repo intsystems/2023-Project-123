@@ -33,7 +33,10 @@
 	\texttt{troeshestova.ls@phystech.edu} \\
 	%% examples of more authors
 	\And
-	Roman Isachenko\\
+        Roman Isachenko\\
+        Moscow Institute of Physics and Technology\\
+        Yandex\\
+	\texttt{roman.isachenko@phystech.edu} \\
 	   \\
 	\texttt{} \\
 	%% \AND
@@ -68,14 +71,16 @@ pdfkeywords={First keyword, Second keyword, More},
 \maketitle
 
 \begin{abstract}
-	Recently there has been a renewed interest in using contrastive learning for self-supervised representation learning. A popular method for learning representations without labels is to compare similar (positive) and dissimilar (negative) pairs of samples. However, negative samples are often chosen randomly, which means that they could be of the same class. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. The experiments are performed on CIFAR10 dataset. This will further improve availability of accurate models for classification in tasks where extensive labeling is expensive or inaccessible.
+	% Recently there has been a renewed interest in using contrastive learning for self-supervised representation learning. A popular method for learning representations without labels is to compare similar (positive) and dissimilar (negative) pairs of samples. However, negative samples are often chosen randomly, which means that they could be of the same class. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. The experiments are performed on CIFAR10 dataset. This will further improve availability of accurate models for classification in tasks where extensive labeling is expensive or inaccessible.
+
+Recently contrastive learning has regained popularity as a self-supervised representation learning technique. It involves comparing positive (similar) and negative (dissimilar) pairs of samples to learn representations without labels. However, false negative and false positive errors in sampling lead to the loss function bias. This paper analyzes various ways to eliminate these biases. Based on the fully-supervised case, we develop debiased contrastive models that account for same-label datapoints without requiring knowledge of true labels, and explore their properties. Using the debiased representations, we measure accuracy of predictions in the classification task. The experiments are carried out on the CIFAR10 dataset, demonstrating the applicability and robustness of the proposed method in scenarios where extensive labeling is expensive or not feasible.
 \end{abstract}
 
 
 \keywords{: Contrastive learning \and Representation learning \and Self-supervised learning}
 
 \section{Introduction}
-Representation learning has become increasingly popular in recent years due to its ability to learn meaningful representations from large amounts of data, without the need for manual feature engineering. A widely used solution for this problem is contrastive learning, a technique that uses the principle of contrasting samples against each other to learn attributes that are common between data classes and attributes that set apart a data class from another. It encourages the representations of similar pairs $(\textbf{x}, \textbf{x}^+)$ to be close, and those of dissimilar pairs $(\textbf{x}, \textbf{x}^-)$ to be more orthogonal.
+Representation learning has become increasingly popular in recent years due to its ability to learn meaningful representations from large amounts of data, without the need for manual feature engineering. A popular solution for this problem is contrastive learning, a technique that uses the principle of contrasting samples against each other to learn shared and distinctive attributes between different data classes. It encourages the representations of similar pairs $(\textbf{x}, \textbf{x}^+)$ to be close, and those of dissimilar pairs $(\textbf{x}, \textbf{x}^-)$ to be more orthogonal.
 
 The basic metric for supervised similarity is \textit{triplet loss} \citep{schroff2015facenet}, where \textbf{x} is called \textit{anchor}, \textbf{x}$^+$ is a sample with the same label as anchor, and \textbf{x}$^-$ is a sample with the different label than anchor. An improvement of triplet loss is \textit{Multi-class N-pair Loss} invented by \citep{NIPS2016_6b180037}:
 
@@ -83,25 +88,24 @@ The basic metric for supervised similarity is \textit{triplet loss} \citep{schro
 \mathcal{L}(\textbf{x}, \textbf{x}^+, \{\textbf{x}_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f(\textbf{x})^T f(\textbf{x}_i^+))}{\exp(f(\textbf{x})^T f(\textbf{x}_i^+)) + \sum _{i=1}^{N-1} \exp(f(\textbf{x})^Tf(\textbf{x}_i^-))}
 \end{equation}
 
-Contrastive learning has proven to be effective for eliciting visual representations: SimCLR  \citep{Chen2020SimCLR} is a framework that considerably outperforms previous self-supervised and semi-supervised learning methods. Its authors developed NT-Xent loss (normalized temperature-scaled cross entropy loss), that uses cosine similarity instead of scalar products.
+Contrastive learning has proven to be effective for eliciting visual representations: SimCLR \citep{Chen2020SimCLR} is a framework that considerably outperforms previous self-supervised and semi-supervised learning methods. Its authors developed NT-Xent loss (normalized temperature-scaled cross-entropy loss), that uses cosine similarity instead of scalar products.
 
-Due to the unavailability of actual labels during training, negative instances $\textbf{x}^-$ are often randomly selected from the training data. However, this approach results in sampling bias, where $\textbf{x}^-$ may actually be similar to $\textbf{x}$. This bias causes a significant drop in performance. 
+During training, the lack of true labels often necessitates the random selection of negative instances $\textbf{x}^-$ from the training data. However, this approach results in sampling bias, where $\textbf{x}^-$ may actually be similar to $\textbf{x}$. This bias leads to a significant drop in performance \citep{hong2021unbiased}.
 
-To address this issue, \citep{khosla2021supervised} extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing to effectively leverage label information. According to the experiments, supervised contrastive loss outperforms the base cross entropy, but only by a small amount. It also outperforms the cross entropy on robustness benchmark (ImageNet-C, which applies common naturally occuring perturbations such as noise, blur and contrast changes to the ImageNet dataset) and is less sensitive to hyperparameter changes.
+To address this issue, \citep{khosla2021supervised} extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing to effectively leverage label information. The experiments demonstrate that the supervised contrastive loss outperforms the base cross-entropy, albeit only by a marginal degree. It also outperforms the cross-entropy on robustness benchmark (ImageNet-C, which applies common naturally occurring perturbations such as noise, blur and contrast changes to the ImageNet dataset) and is less sensitive to hyperparameter changes.
 
-As for the case of self-supervised learning, a debiased contrastive loss was proposed to mitigate the bias of negative sampling by \citep{chuang2021debiased}. Given $N$ negative and $M$ positive samples, $\mathcal{L}^{N, M}_{\text{Debiased}} (f)$ is the loss function that corrects for False Negative samples. To remain unsupervised in practice, samples are acquired from the data distribution and a positive distribution mimicked by data augmentations, which can contatin False Positives.
+As for the case of self-supervised learning, a debiased contrastive loss was proposed to mitigate the bias of negative sampling by \citep{chuang2021debiased}. Given $N$ negative and $M$ positive samples, $L^{N, M}_{\text{DebiasedNeg}} (f)$ is the loss function that corrects for False Negative samples. To remain unsupervised in practice, samples are acquired from the data distribution and a positive distribution mimicked by data augmentations, which can contain False Positive samples.
 
-This work aims to develop a new algorithm for debiased sampling in contrastive learning, which accounts for False Positive as well as False Negative samples. 
+This work aims to develop a novel algorithm for debiased sampling in contrastive learning, which accounts for False Positive as well as False Negative samples. 
 
 % In addition, it is suggested to tackle the issue of choosing a wrong anchor in multimodal applications such as attribute detection.
-
 
 \section{Problem Statement}
 \label{sec:headings}
 
 \subsection{Debiased Contrastive Learning}
 
-In \citep{chuang2021debiased} the distribution over classes is denoted by $\rho(c)$, the joint distribution $p_{x,c}(\textbf{x}, c) = p(\textbf{x}|c)\rho(c)$. Let $h : X \rightarrow C$ be the function assigning the latent class labels. Then $p^+_x(\textbf{x}') = p(\textbf{x}'|h(\textbf{x}') = h(\textbf{x}))$ is the probability of observing $\textbf{x}'$ as a positive example for $\textbf{x}$ and $p^-_x(\textbf{x}') = p(\textbf{x}'|h(\textbf{x}') \neq h(\textbf{x}))$ the probability of a negative example. It is assumed that the class probabilities $\rho(\textbf{x}) = \tau^+$ are uniform, and $\tau^- = 1 - \tau^+$ is the probability of observing any different class. Then the  ``ideal``, or unbiased loss to optimize would be:
+Let $\mathcal{X}$ be the object space, and let $p(x)$ be the data distribution over $\mathcal{X}$, then the target embedding is $f: \mathcal{X} \rightarrow \mathbb{R}^d$. In \citep{chuang2021debiased} the distribution over a set of the discrete latent classes $\mathcal{C}$ is denoted by $\rho(c)$, hence the joint distribution $p_{x,c}(\textbf{x}, c) = p(\textbf{x}|c)\rho(c)$. Let $h : \mathcal{X} \rightarrow \mathcal{C}$ be the function assigning the class labels. Then $p^+_x(\textbf{x}') = p(\textbf{x}'|h(\textbf{x}') = h(\textbf{x}))$ is the probability of observing $\textbf{x}'$ as a positive example for $\textbf{x}$ and $p^-_x(\textbf{x}') = p(\textbf{x}'|h(\textbf{x}') \neq h(\textbf{x}))$ the probability of a negative example. It is assumed that the class probabilities $\rho(\textbf{x}) = \tau^+$ are uniform, and $\tau^- = 1 - \tau^+$ is the probability of observing any different class. Then the  ``ideal'', or unbiased loss to optimize would be:
 
 \begin{equation}  \label{eq:2}
 L_{\text{Unbiased}}^N(f) = \mathbb{E}_{\substack{\textbf{x} \sim p, \textbf{x}^+ \sim p^+_x,\\ \textbf{x}_i^- \sim p_x^-}} \bigg[-\log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)}}{e^{f(\textbf{x})^T f(\textbf{x}^+)} + \sum _{i=1}^N e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}\bigg]
@@ -124,37 +128,29 @@ And the missing $p^-_x(\textbf{x}')$ is derived as
 \begin{equation} \label{eq:5}
 p_x^-(\textbf{x}') = \frac{p(\textbf{x}') - \tau^+ p^+_x(\textbf{x}')}{\tau^-}
 \end{equation}
-However, estimating $p(\textbf{x}')$ and $p^+_x(\textbf{x}')$ empirically is computationally expensive, and the authors propose a cheaper way to estimate $p^-_x(\textbf{x}')$, using $N$ samples $\{\textbf{u}_i\}_{i=1}^N$ from $p$ and $M$ samples $\{\textbf{v}_i\}_{i=1}^M$ from $p_x^+$, with temperature $t$:
+However, estimating $p(\textbf{x}')$ and $p^+_x(\textbf{x}')$ empirically is computationally expensive, and the authors suggest a cost-effective approach for estimating $p^-_x(\textbf{x}')$, using $N$ samples $\{\textbf{u}_i\}_{i=1}^N$ from $p$ and $M$ samples $\{\textbf{v}_i\}_{i=1}^M$ from $p_x^+$, with temperature $t$:
 
 \begin{equation} \label{eq:6}
-L_{\text{DebiasedNeg}}^{N, M} (f) = \mathbb{E}_{\substack{\textbf{x} \sim p; \textbf{x}_+ \sim p_x^+,\\ \{\textbf{u}_i\}_{i=1}^N \sim p^N \\ \{\textbf{v}_i\}_{i=1}^N \sim {p_x^+}^M}}  \bigg[ -\log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)} }{e^{f(\textbf{x})^T f(\textbf{x}^+)} + N g\big(\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \{\textbf{v}_i\}_{i=1}^M\big)} \bigg],
+L_{\text{DebiasedNeg}}^{N, M} (f) = \mathbb{E}_{\substack{\textbf{x} \sim p; \textbf{x}_+ \sim p_x^+,\\ \{\textbf{u}_i\}_{i=1}^N \sim p^N \\ \{\textbf{v}_j\}_{j=1}^M \sim {p_x^+}^M}}  \bigg[ -\log \frac{e^{f(\textbf{x})^T f(\textbf{x}^+)} }{e^{f(\textbf{x})^T f(\textbf{x}^+)} + N g\big(\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \{\textbf{v}_j\}_{j=1}^M\big)} \bigg],
 \end{equation}
 
-where the empirical estimates of $p$ and $p_x^-$ are defined as
+where the empirical estimate of the term corresponding to $p_x^-$ is defined as
 \begin{equation} \label{eq:7}
-g\big(\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \{\textbf{v}_i\}_{i=1}^M\big) = \max \bigg\{ \frac{1}{\tau^-}\bigg(\frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} - \tau^+ \frac{1}{M} \sum \limits_{i=1}^M e^{f(\textbf{x})^T f(\textbf{v}_i)}\bigg), e^{-1/t}\bigg\}.
+g\big(\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \{\textbf{v}_j\}_{j=1}^M\big) = \max \bigg\{ \frac{1}{\tau^-}\bigg(\frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} - \tau^+ \frac{1}{M} \sum \limits_{j=1}^M e^{f(\textbf{x})^T f(\textbf{v}_j)}\bigg), e^{-1/t}\bigg\}.
 \end{equation}
 
-Using this loss on SimCLR framework allowed to achieve higher accuracy compared to the regular biased loss. With a similar theoretical inference, this work is aimed at developing a new algorithm, that would additionally focus on eliminating bias caused by False Positives.
-
-% \paragraph{\underline{Tasks:}} 
-% \begin{itemize}
-%   \item reproduce Debiased Contrastive Learning results
-%   \item develop novel debiased contrastive loss that accounts for False Positives.
-%   \item test the algorithm on CIFAR10 and MNIST datasets
-% \end{itemize}
+The implementation of this loss for the SimCLR framework resulted in improved accuracy compared to the regular biased loss. Building on this theoretical foundation, our study aims to develop an algorithm that specifically addresses the issue of eliminating False Positive bias.
 
 \subsection{False Positive Samples} \label{FP}
-False Positive samples can be encountered in contrastive learning due to excessive or inappropriate augmentation. Similar to Debiased Contrastive Learning, we propose to estimate the positive sampling distribution in the loss function.
+Excessive or inappropriate augmentation leads to False Positive samples in contrastive learning. Similar to Debiased Contrastive Learning, we propose estimating the positive sampling distribution within the loss function.
 
 \begin{equation}  \label{eq:8}
 p_x^+ (\textbf{x}') = \frac{p(\textbf{x}') - \tau^- p^-_x(\textbf{x}')}{\tau^+}
 \end{equation}
 
-Contrary to Debiased Contrastive Learning, drawing samples from $p(\textbf{x}')$ will also include positive labelled datapoints, since some of them could be actually negative. 
+Unlike Debiased Contrastive Learning, drawing samples from $p(\textbf{x}')$ will include positive labeled data points that may be, in fact, negative.
 
 \newtheorem{theorem}{Theorem}
-\newtheorem{corollary}{Corollary}[theorem]
 \newtheorem{lemma}[theorem]{Lemma}
 
 \begin{lemma}
@@ -180,17 +176,17 @@ Since the expression inside the expectation is bounded, we can apply Dominated c
 & = \mathbb{E} \bigg[ - \log \frac{\mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^T f(\textbf{x}^+)}}{\mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^T f(\textbf{x}^+)} + N \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}^-)}}\bigg]
 \end{flalign*}
 
-Using \ref{eq:8} and linearity of the expectation we complete the proof:
+Using equation \ref{eq:8} and the linearity of the expectation we complete the proof:
 $$\mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^T f(\textbf{x}^+)} = \frac{1}{\tau^+} \big(\mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^T f(\textbf{x}')} - \tau^- \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}^-)}\big) = R.$$
 \end{proof}
 
-We will denote the limit by $\tilde{L}_{\text{DebiasedPos}}^N$ and rewrite it, multiplying the nominator and the denominator of the under-logarithm expression by $\tau^+$:
+We will denote the limit by $\tilde{L}_{\text{DebiasedPos}}^N$ and rewrite it, multiplying the numerator and the denominator of the under-logarithm expression by $\tau^+$:
 
 \begin{equation} \label{eq:11}
 \tilde{L}_{\text{DebiasedPos}}^N (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \textbf{x}^- \sim p_x^-}} \bigg[ - \log \frac{\mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^T f(\textbf{x}')} - \tau^- \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}{\mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^T f(\textbf{x}')} + \big(N \tau^+ - \tau^-\big) \mathbb{E}_{\textbf{x}^- \sim p_x^-} e^{f(\textbf{x})^T f(\textbf{x}_i^-)}}\bigg]
 \end{equation}
 
-With finite N:
+With finite $N$:
 \begin{equation} \label{eq:12}
 L_{\text{DebiasedPos}}^N (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \{\textbf{u}_i\}_{i=1}^N \sim {p_x^-}^N \\ \textbf{v} \sim p_x^+}} \bigg[-\log \frac{P_{\text{emp}} (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \textbf{v}) - \tau^- P_{\text{emp}}^- (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N)} {P_{\text{emp}} (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N, \textbf{v})+ \big(N \tau^+ - \tau^-\big) P_{\text{emp}}^- (\textbf{x}, \{\textbf{u}_i\}_{i=1}^N) }\bigg],
 \end{equation}
@@ -208,7 +204,7 @@ When $N$ is finite and $M=1$, theorem \ref{thm:asympt} bounds the error as decre
 
 \begin{restatable}[]{thm}{asympt}
 \label{thm:asympt}
-If $M = 1$, for any embedding f and any $\delta > 0$ exists large enough N, that
+If $M = 1$, for any embedding f and any $\delta > 0$ exists large enough $N$, that
 \begin{equation} \label{eq:15}
 \big|\tilde{L}_{\text{DebiasedPos}}^N (f) - L_{\text{DebiasedPos}}^N (f)\big| \leq \bigg[\bigg(1 + \frac{\tau^-}{\tau^+} + \delta\bigg) \sqrt{\frac{\pi}{2N}} + \bigg(1 + \frac{1}{\tau^+}\bigg) \sqrt{\frac{\pi}{2N + 2}}\bigg] e^{3/2}
 \end{equation}
@@ -216,18 +212,18 @@ If $M = 1$, for any embedding f and any $\delta > 0$ exists large enough N, that
 
 \subsection{Positive Sample Aggregation} \label{pos_aggr_theory}
 
-When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised} we will aggregate losses using the summation over positive samples located outside of the log. In our case this means taking all possible pairs of same-class (positive) elements, and averaging all corresponding $L_{\text{DebiasedPos}}^N (f)$ losses. We will refer to this method as \textit{pos-grouping}.
+When the number of positive samples $M > 1$, similar to \citep{khosla2021supervised}, we will aggregate losses using the summation over positive samples located outside of the log. In our case this means taking all possible pairs of same-class (positive) elements, and averaging all corresponding $L_{\text{DebiasedPos}}^N (f)$ losses. We will refer to this method as \textit{loss-combination}.
 
 % (which yields better accuracy for supervised contrastive losses rather than summation inside of the log)
 
 \begin{equation} \label{eq:16}
-L_{\text{DebiasedPos}}^{N, M} (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \{\textbf{u}_i\}_{i=1}^N \sim {p^-}^N \\ \{\textbf{v}_i\}_{i=1}^M\sim {p^+}^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{P_{\text{emp}} - \tau^- P_{\text{emp}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}\bigg]
+L_{\text{DebiasedPos}}^{N, M} (f) = \mathbb{E}_{\substack{\textbf{x} \sim p \\ \{\textbf{u}_i\}_{i=1}^N \sim {p^-}^N \\ \{\textbf{v}_j\}_{j=1}^M\sim {p^+}^M}} \frac{1}{M} \sum\limits^M \bigg[-\log \frac{P_{\text{emp}} - \tau^- P_{\text{emp}}^-}{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}\bigg]
 \end{equation}
 
-Another way to aggregate positive samples is to do so inside the estimates $P_{\text{emp}}$, following the example of \citep{chuang2021debiased} which we will refer to as \textit{loss-combination}. Emperically, the experiments in Section \ref{pos_aggr} show that while \textit{pos-grouping} is computationally less expensive, \textit{loss-combination} yields better accuracy with larger M.
+Another way to aggregate positive samples is to do so inside the estimates $P_{\text{emp}}$, following the example of \citep{chuang2021debiased}, which we will refer to as \textit{pos-grouping}. Empirically, the experiments in Section \ref{pos_aggr} show that while \textit{pos-grouping} is computationally less expensive, \textit{loss-combination} yields better accuracy with larger $M$.
 
 % \subsection{Wrong Anchor}
-% This issue arises in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weigh the losses by the cosine similarity of the anchor image vector and the description text vector.
+% This issue arises in downstream applications of contrastive learning such as image attribute detection, e.g. discrepancy between the image (image representation $f$) and its description (description representation $t$) in online shopping. To solve this problem, when calculating the losses for each picture, we propose to weight the losses by the cosine similarity of the anchor image vector and the description text vector.
 
 % \begin{equation} \label{eq:15}
 % L_{\text{Unbiased}}(x, x^+, \{x_i^-\}_{i=1}^{N-1}; f) = - \text{sim} (f^T, t^T) \log \frac{\exp(f^T f_i^+)}{\exp(f^T f_i^+ + \sum_{i=1}^N \exp(f^T f_i^-)}
@@ -236,7 +232,7 @@ Another way to aggregate positive samples is to do so inside the estimates $P_{\
 \section{Experiment}
 \subsection{Baseline Reproduction}
 
-The goal of the experiment is to compare Multi-class N-pair Loss \ref{eq:1} with Negative-Debiased Loss \ref{eq:6}. We use CIFAR10 \citep{krizhevsky2009learning} dataset, an image recognition dataset for image classification. It consists of 60000 32x32 color images in 10 classes. The baseline negative-debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam}, learning rate 0.001, and batch size 512. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
+The goal of the experiment is to compare Multi-class N-pair Loss [\ref{eq:1}] with Negative-Debiased Loss [\ref{eq:6}]. We use CIFAR10 \citep{krizhevsky2009learning} dataset, an image recognition dataset for image classification. It consists of 60000 32x32 color images in 10 classes. The baseline Negative-Debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam}, learning rate 0.001, and batch size 512. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
 
  The primary results are shown in Figure \ref{fig:fig2}. While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
 
@@ -265,7 +261,7 @@ We run the same experiment for Positive-Debiased loss [\ref{eq:14}]. The code is
 \label{fig:fig2}
 \end{figure}
 
-To test the performance of the loss under the assumptions made in \ref{FP}, we artificially exclude False Negative errors via accessing ground truth labels during training, and discover that Positive-Debiased loss still outperforms Negative-Debiased loss [Figure \ref{fig:fig3}].
+To test the performance of the loss under the assumptions made in Section \ref{FP}, we artificially exclude False Negative errors via accessing ground truth labels during training, and discover that Positive-Debiased loss still outperforms Negative-Debiased loss [Figure \ref{fig:fig3}].
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_dropfn.png}
@@ -283,11 +279,11 @@ To understand if Positive-Debiased loss is robust to noise, we apply Gaussian bl
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/base_vs_M=2.png}
-\caption{Classification accuracy on CIFAR10 with an increased positive sample size M}
+\caption{Classification accuracy on CIFAR10 with an increased positive sample size $M$}
 \label{fig:fig5}
 \end{figure}
 
-Additionally we test all three losses with increased positive sample size M [Figure \ref{fig:fig5}]. Larger M leads to better estimate of the loss both for Positive- and Negative-Debiased losses, yielding better accuracy as a result. It is worth noting that in all of the experiments Positive-Debiased loss achieves better accuracy in the earlier stages of training both for Top-1 and Top-5 scores.
+Additionally, we test all three losses with increased positive sample size $M$ [Figure \ref{fig:fig5}]. Larger $M$ leads to better estimate of the loss both for Positive- and Negative-Debiased losses, yielding better accuracy as a result. It is worth noting that in all of the experiments Positive-Debiased loss achieves better accuracy in the earlier stages of training both for Top-1 and Top-5 scores.
 
 \begin{figure}
 \includegraphics[width=1\textwidth]{figures/pg_vs_lc.png}
@@ -296,14 +292,14 @@ Additionally we test all three losses with increased positive sample size M [Fig
 \end{figure}
 
 \subsection{Positive Sample Aggregation} \label{pos_aggr}
-In this experiment we compare methods of aggregation over positive samples introduced in Section \ref{pos_aggr_theory}. We train SimCLR with the same parameters, except for setting batch size to 64 when testing $M=4$ for faster training. As expected, there is a trade-off between accuracy and speed. The results in Table \ref{tab:table} show that \textit{pos-grouping} improves over \textit{loss-combination} in accuracy, but is computationally slower. Figure \ref{fig:fig6} shows that with bigger $M$ the advantage of \textit{loss-combination} over \textit{pos-grouping} gets more significant. 
+In this experiment, we compare methods of aggregation over positive samples introduced in Section \ref{pos_aggr_theory}. We train SimCLR with the same parameters, except for setting batch size to 64 when testing $M=4$ for faster training. As expected, there is a trade-off between accuracy and speed. The results in Table \ref{tab:table} show that \textit{pos-grouping} improves over \textit{loss-combination} in accuracy, but is computationally slower. Figure \ref{fig:fig6} shows that with bigger $M$ the advantage of \textit{loss-combination} over \textit{pos-grouping} gets more significant. 
 
 \begin{table}
-    \caption{Aggregation over M positive samples for DebiasedPos}
+    \caption{Aggregation over $M$ positive samples for DebiasedPos}
     \centering
     \begin{tabular}{llllll}
         \toprule
-        Method  & M & bs    & Training time (min)   & acc@1 & acc@5\\
+        Method  & $M$ & bs    & Training time (min)   & acc@1 & acc@5\\
         \midrule
         -   & 1 & 512   & 122.85    & 76.76 & 98.61\\
         \midrule
@@ -319,12 +315,12 @@ In this experiment we compare methods of aggregation over positive samples intro
 
 \subsection{Discussion}
 \begin{enumerate}
-    \item Positive-Debiased loss is based on the assumption of true negative samples, i.e. with no False Negative errors, however, it still improves accuracy of classification when this assumption does not hold.
-    \item Another implicit assumption we make is that the classes have uniform distribution, which is not true for many datasets, and it is an interesting direction of further reseach to additionally account for the biases in the class distribution.
+    \item Positive-Debiased loss is based on the assumption of true negative samples, i.e., with no False Negative errors; however, it still improves accuracy of classification when this assumption does not hold.
+    \item Another implicit assumption we make is that the classes have uniform distribution, which is not true for many datasets, and it is an interesting direction of further research to additionally account for the biases in the class distribution.
 \end{enumerate}
 
 \section{Conclusion}
-In this paper, we propose a new method for debiasing contrastive loss based on mitigating biases caused by False Positive errors. Theoretical analysis shows that computationally Positive-Debiased and baseline losses are equivalent, however, in a scenario with an increased False Positive rate our loss yields better accuracy, which shows that it is more robust. Additionally, Positive-Debiased loss is more dominant in the early epochs. We further explore 2 mehtods of aggregating loss over positive samples, and infer that \textit{pos-grouping} trains faster, while \textit{loss-combination} leads to better performance. 
+In this paper, we propose a new method for debiasing contrastive loss based on mitigating biases caused by False Positive errors. Theoretical analysis shows that computationally Positive-Debiased and baseline losses are equivalent. However, in a scenario with an increased False Positive rate our loss yields better accuracy, which shows that it is more robust. Moreover, Positive-Debiased loss is more dominant in the early epochs. We further explore 2 methods of aggregating loss over positive samples, and infer that \textit{pos-grouping} trains faster, while \textit{loss-combination} leads to better performance. 
 
 % Interesting directions of future work include (1) trying the debiased objective in semi-supervised learning or few shot learning, and (2) studying the effect of how positive (similar) examples are drawn, e.g., analyzing different data augmentation techniques.
 
@@ -395,7 +391,7 @@ Finally, we write the expectation of $\Delta_1$ as the integral of its tail prob
     &\forall \varepsilon > 0: \mathbb{P} (\Delta_2 \geq \varepsilon) = \mathbb{P} \bigg(\bigg|\log \{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\}\bigg| \geq \varepsilon \bigg)&\\
 \end{flalign*}
 
-Like before, we split the probability into sum of two terms, and bound the first term as:
+We split the probability into a sum of two terms, and bound the first term as:
 \begin{flalign*}
     &\mathbb{P} \bigg(\log \{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} - \log \{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-\} \geq \varepsilon \bigg) =&\\
     &= \mathbb{P} \bigg(\log \frac{P_{\text{emp}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-}{P_{\text{est}} + (N \tau^+ - \tau^-) P_{\text{emp}}^-} \geq \varepsilon \bigg)
@@ -406,7 +402,7 @@ Like before, we split the probability into sum of two terms, and bound the first
     \mathbb{P} (P_{\text{emp}} - P_{\text{est}} \geq \varepsilon e^{-1})&\\
 \end{flalign*}
 
-This holds because with $N$ big enough, $N \tau^+ \geq \tau^-$, and thus $1/(N \tau^+ - \tau^-) P_{\text{est}} + P_{\text{est}}^- \geq e^{-1}$.
+This holds because with $N$ large enough, $N \tau^+ \geq \tau^-$, and thus $1/(N \tau^+ - \tau^-) P_{\text{est}} + P_{\text{est}}^- \geq e^{-1}$.
 \begin{flalign*}
     &\mathbb{P} (\Delta_2 \geq \varepsilon) \leq \mathbb{P} (|P_{\text{emp}} - P_{\text{est}}| \geq \varepsilon e^{-1}) = &\\
     &= \mathbb{P} \bigg(\bigg| \frac{1}{N+2} \bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} + e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}\bigg) - \mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^Tf(\textbf{x}')} \bigg| \geq \varepsilon e^{-1}\bigg) \leq&\\
@@ -420,7 +416,7 @@ This holds because with $N$ big enough, $N \tau^+ \geq \tau^-$, and thus $1/(N \
     &\forall \varepsilon > 0: \mathbb{P} (\Delta_3 \geq \varepsilon) = \mathbb{P} \bigg(\bigg|\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{est}} - \tau^- P_{\text{est}}^-\}\bigg| \geq \varepsilon \bigg)&\\
 \end{flalign*}
 
-Like before, we split the probability into sum of two terms, and bound the first term as:
+We split the probability into a sum of two terms, and bound the first term as:
 \begin{flalign*}
     &\mathbb{P} \bigg(\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{est}} - \tau^- P_{\text{est}}^-\} \geq \varepsilon \bigg) =&\\
     &= \mathbb{P} \bigg(\log \frac{P_{\text{emp}} - \tau^- P_{\text{est}}^-}{P_{\text{est}} - \tau^- P_{\text{est}}^-} \geq \varepsilon \bigg)
@@ -431,7 +427,7 @@ Like before, we split the probability into sum of two terms, and bound the first
     \mathbb{P} (P_{\text{emp}} - P_{\text{est}} \geq \varepsilon \tau^+ e^{-1})&\\
 \end{flalign*}
 
-This time the bound is different, because $P_{\text{est}} - \tau^-P_{\text{est}}^- = \tau^+ P_{\text{est}}^+ := \tau^+ \mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^Tf(\textbf{x}^+)} \geq \tau^+ e^{-1}$.
+This time the bound is different because $P_{\text{est}} - \tau^-P_{\text{est}}^- = \tau^+ P_{\text{est}}^+ := \tau^+ \mathbb{E}_{\textbf{x}^+ \sim p_x^+} e^{f(\textbf{x})^Tf(\textbf{x}^+)} \geq \tau^+ e^{-1}$.
 \begin{flalign*}
     &\mathbb{P} (\Delta_3 \geq \varepsilon) \leq \mathbb{P} (|P_{\text{emp}} - P_{\text{est}}| \geq \varepsilon \tau^+ e^{-1}) = &\\
     &= \mathbb{P} \bigg(\bigg| \frac{1}{N+2} \bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} + e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}\bigg) - \mathbb{E}_{\textbf{x}' \sim p} e^{f(\textbf{x})^Tf(\textbf{x}')} \bigg| \geq \varepsilon \tau^+ e^{-1}\bigg) \leq&\\
@@ -445,7 +441,7 @@ This time the bound is different, because $P_{\text{est}} - \tau^-P_{\text{est}}
     &\forall \varepsilon > 0: \mathbb{P} (\Delta_4 \geq \varepsilon) = \mathbb{P} \bigg(\bigg|\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{emp}} - \tau^- P_{\text{emp}}^-\}\bigg| \geq \varepsilon \bigg)&\\
 \end{flalign*}
 
-Like before, we split the probability into sum of two terms, and bound the first term as:
+We split the probability into a sum of two terms, and bound the first term as:
 \begin{flalign*}
     &\mathbb{P} \bigg(\log \{P_{\text{emp}} - \tau^- P_{\text{est}}^-\} - \log \{P_{\text{emp}} - \tau^- P_{\text{emp}}^-\} \geq \varepsilon \bigg) =&\\
     &= \mathbb{P} \bigg(\log \frac{P_{\text{emp}} - \tau^- P_{\text{est}}^-}{P_{\text{emp}} - \tau^- P_{\text{emp}}^-} \geq \varepsilon \bigg)
@@ -456,7 +452,7 @@ Like before, we split the probability into sum of two terms, and bound the first
     \mathbb{P} \bigg(P_{\text{emp}}^- - P_{\text{est}}^- \geq \varepsilon \bigg( \frac{\tau^+}{\tau^-} e^{-1} - \delta\bigg)\bigg)&\\
 \end{flalign*}
 
-To get a lower bound of the expression in braces for big $N$, we will take a slightly smaller value than its limit.
+To get a lower bound of the expression in braces for a large $N$, we will take a slightly smaller value than its limit.
 \begin{flalign*}
     &\frac{1}{\tau^-} P_{\text{emp}} - P_{\text{emp}}^- = \frac{1}{\tau^-} \frac{1}{N+2} \bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} + e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}\bigg) - \frac{1}{N} \sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)} =&\\
     &= \bigg(\frac{1}{\tau^-}\frac{1}{N+2} - \frac{1}{N}\bigg)\bigg(\sum \limits_{i=1}^N e^{f(\textbf{x})^T f(\textbf{u}_i)}\bigg) + \frac{e^{f(\textbf{x})^T f(\textbf{v})} + e^{f(\textbf{x})^T f(\textbf{x})}}{\tau^-(N+2)} \xrightarrow[N \to \infty]{} \frac{e^{-1}}{\tau^-} - e^{-1} = \frac{\tau^+}{\tau^-} e^{-1}&\\
