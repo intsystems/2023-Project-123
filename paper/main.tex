@@ -88,9 +88,9 @@ The basic metric for supervised similarity is \textit{triplet loss} \citep{Schro
 \mathcal{L}(\textbf{x}, \textbf{x}^+, \{\textbf{x}_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f(\textbf{x})^T f(\textbf{x}_i^+))}{\exp(f(\textbf{x})^T f(\textbf{x}_i^+)) + \sum _{i=1}^{N-1} \exp(f(\textbf{x})^Tf(\textbf{x}_i^-))}
 \end{equation}
 
-Contrastive learning has proven to be effective for eliciting visual representations: SimCLR \citep{Chen2020SimCLR} is a framework that considerably outperforms previous self-supervised and semi-supervised learning methods. Its authors developed NT-Xent loss (normalized temperature-scaled cross-entropy loss), that uses cosine similarity instead of scalar products.
+Contrastive learning has proven to be effective for eliciting visual representations: SimCLR \citep{chen2020simple} is a framework that considerably outperforms previous self-supervised and semi-supervised learning methods. Its authors developed NT-Xent loss (normalized temperature-scaled cross-entropy loss), that uses cosine similarity instead of scalar products.
 
-During training, the lack of true labels often necessitates the random selection of negative instances $\textbf{x}^-$ from the training data. However, this approach results in sampling bias, where $\textbf{x}^-$ may actually be similar to $\textbf{x}$. This bias leads to a significant drop in performance \citep{hong2021unbiased}.
+During training, the lack of true labels often necessitates the random selection of negative instances $\textbf{x}^-$ from the training data. However, this approach results in sampling bias, where $\textbf{x}^-$ may actually be similar to $\textbf{x}$. This bias leads to a significant drop in performance \citep{NEURIPS2021_de8aa43e}.
 
 To address this issue, \citep{khosla2021supervised} extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing to effectively leverage label information. The experiments demonstrate that the supervised contrastive loss outperforms the base cross-entropy, albeit only by a marginal degree. It also outperforms the cross-entropy on robustness benchmark (ImageNet-C, which applies common naturally occurring perturbations such as noise, blur and contrast changes to the ImageNet dataset) and is less sensitive to hyperparameter changes.
 
