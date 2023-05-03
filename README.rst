@@ -29,3 +29,7 @@ Software modules developed as part of the study
 ======================================================
 1. A python package *DebiasedPos* with all implementation `here <https://github.com/intsystems/2023-Project-123/tree/master/code>`_.
 2. A code with all experiment visualisation `here <https://github.com/intsystems/2023-Project-123/blob/master/code/experiments.ipynb>`_. View in `colab <https://colab.research.google.com/drive/1ZwFs8Re9bQdgzQxNsXU6yrV31C9SW8D-?usp=sharing>`_.
+
+## Acknowledgements
+
+Inspired by [chingyaoc/DCL](https://github.com/chingyaoc/DCL).
