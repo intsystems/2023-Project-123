@@ -82,7 +82,7 @@ Recently contrastive learning has regained popularity as a self-supervised repre
 \section{Introduction}
 Representation learning has become increasingly popular in recent years due to its ability to learn meaningful representations from large amounts of data, without the need for manual feature engineering. A popular solution for this problem is contrastive learning, a technique that uses the principle of contrasting samples against each other to learn shared and distinctive attributes between different data classes. It encourages the representations of similar pairs $(\textbf{x}, \textbf{x}^+)$ to be close, and those of dissimilar pairs $(\textbf{x}, \textbf{x}^-)$ to be more orthogonal.
 
-The basic metric for supervised similarity is \textit{triplet loss} \citep{schroff2015facenet}, where \textbf{x} is called \textit{anchor}, \textbf{x}$^+$ is a sample with the same label as anchor, and \textbf{x}$^-$ is a sample with the different label than anchor. An improvement of triplet loss is \textit{Multi-class N-pair Loss} invented by \citep{NIPS2016_6b180037}:
+The basic metric for supervised similarity is \textit{triplet loss} \citep{Schroff_2015}, where \textbf{x} is called \textit{anchor}, \textbf{x}$^+$ is a sample with the same label as anchor, and \textbf{x}$^-$ is a sample with the different label than anchor. An improvement of triplet loss is \textit{Multi-class N-pair Loss} invented by \citep{NIPS2016_6b180037}:
 
 \begin{equation} \label{eq:1}
 \mathcal{L}(\textbf{x}, \textbf{x}^+, \{\textbf{x}_i^-\}_{i=1}^{N-1}; f) = - \log \frac{\exp(f(\textbf{x})^T f(\textbf{x}_i^+))}{\exp(f(\textbf{x})^T f(\textbf{x}_i^+)) + \sum _{i=1}^{N-1} \exp(f(\textbf{x})^Tf(\textbf{x}_i^-))}
@@ -94,7 +94,7 @@ During training, the lack of true labels often necessitates the random selection
 
 To address this issue, \citep{khosla2021supervised} extend the self-supervised batch contrastive approach to the fully-supervised setting, allowing to effectively leverage label information. The experiments demonstrate that the supervised contrastive loss outperforms the base cross-entropy, albeit only by a marginal degree. It also outperforms the cross-entropy on robustness benchmark (ImageNet-C, which applies common naturally occurring perturbations such as noise, blur and contrast changes to the ImageNet dataset) and is less sensitive to hyperparameter changes.
 
-As for the case of self-supervised learning, a debiased contrastive loss was proposed to mitigate the bias of negative sampling by \citep{chuang2021debiased}. Given $N$ negative and $M$ positive samples, $L^{N, M}_{\text{DebiasedNeg}} (f)$ is the loss function that corrects for False Negative samples. To remain unsupervised in practice, samples are acquired from the data distribution and a positive distribution mimicked by data augmentations, which can contain False Positive samples.
+As for the case of self-supervised learning, a debiased contrastive loss was proposed to mitigate the bias of negative sampling by \citep{chuang2020debiased}. Given $N$ negative and $M$ positive samples, $L^{N, M}_{\text{DebiasedNeg}} (f)$ is the loss function that corrects for False Negative samples. To remain unsupervised in practice, samples are acquired from the data distribution and a positive distribution mimicked by data augmentations, which can contain False Positive samples.
 
 This work aims to develop a novel algorithm for debiased sampling in contrastive learning, which accounts for False Positive as well as False Negative samples. 
 
@@ -232,7 +232,7 @@ Another way to aggregate positive samples is to do so inside the estimates $P_{\
 \section{Experiment}
 \subsection{Baseline Reproduction}
 
-The goal of the experiment is to compare Multi-class N-pair Loss [\ref{eq:1}] with Negative-Debiased Loss [\ref{eq:6}]. We use CIFAR10 \citep{krizhevsky2009learning} dataset, an image recognition dataset for image classification. It consists of 60000 32x32 color images in 10 classes. The baseline Negative-Debiased model is SimCLR \citep{Chen2020SimCLR} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{Diederik2014Adam}, learning rate 0.001, and batch size 512. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
+The goal of the experiment is to compare Multi-class N-pair Loss [\ref{eq:1}] with Negative-Debiased Loss [\ref{eq:6}]. We use CIFAR10 \citep{krizhevsky2009learning} dataset, an image recognition dataset for image classification. It consists of 60000 32x32 color images in 10 classes. The baseline Negative-Debiased model is SimCLR \citep{chen2020simple} with ResNet-18 \citep{7780459} as the encoder architecture, with the Adam optimizer \citep{kingma2017adam}, learning rate 0.001, and batch size 512. All models are trained for 50 epochs and evaluated by training a linear classifier after fixing the learned embedding.
 
  The primary results are shown in Figure \ref{fig:fig2}. While the difference between Top-5 accuracy for the debiased model and the biased model is insignificant, Top-1 accuracy of the debiased model is higher than that of the biased model. 
 
