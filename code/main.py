@@ -1,6 +1,5 @@
 import argparse
 import os
-import itertools
 import logging
 import time
 
@@ -210,7 +209,7 @@ def main(dataset: str, loss: str, root: str, batch_size: int, model_arch, *, cud
 
     step = 0
     for epoch in tqdm(range(1, epochs + 1)):
-        train_loss, step = train(model, train_loader, loss_criterion, optimizer, batch_size,
+        _, step = train(model, train_loader, loss_criterion, optimizer, batch_size,
                                  cuda=cuda, writer=writer, m_agg_mode=m_agg_mode, step=step)
         if epoch % 1 == 0:
             test_acc_1, test_acc_5 = test(model, memory_loader, test_loader, cuda=cuda, class_cnt=c, top_k=top_k,
