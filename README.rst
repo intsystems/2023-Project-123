@@ -32,4 +32,4 @@ Software modules developed as part of the study
 
 Acknowledgements
 ======================================================
-Inspired by [chingyaoc/DCL](https://github.com/chingyaoc/DCL).
+Inspired by `chingyaoc/DCL <https://github.com/chingyaoc/DCL>`_.
